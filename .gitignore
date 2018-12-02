@@ -30,3 +30,7 @@
 *.exe
 *.out
 *.app
+
+# Build DIR
+.gitignore
+Source/build/
