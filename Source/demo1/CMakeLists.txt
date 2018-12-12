@@ -1,4 +1,0 @@
-ADD_EXECUTABLE(demo demo.cpp)
-TARGET_LINK_LIBRARIES(demo PSINS)
-
-ADD_CUSTOM_TARGET(test demo)

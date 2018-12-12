@@ -1,4 +1,3 @@
-//#include "stdafx.h"
 #include "PSINS.h"
 
 const CVect3 I31(1.0), O31(0.0), Ipos(1.0/RE,1.0/RE,1.0);
@@ -27,7 +26,7 @@ CGLV::CGLV(double Re, double f, double wie0, double g0)
     dphpsh = dph/sqrt(hur);
     ugpsHz = ug/sqrt(1.0);
     ugpsh = ug/sqrt(hur);
-    mpsh = 1/sqrt(hur);
+    mpsh = 1/sqrt(hur); 
     mpspsh = 1/1/sqrt(hur);
     ppmpsh = ppm/sqrt(hur);
     secpsh = sec/sqrt(hur);
@@ -49,6 +48,11 @@ CVect3::CVect3(double xx, double yy, double zz)
 }
 
 CVect3::CVect3(const double *pdata)
+{
+    i=*pdata++, j=*pdata++, k=*pdata;
+}
+
+CVect3::CVect3(const float *pdata)
 {
     i=*pdata++, j=*pdata++, k=*pdata;
 }
@@ -82,7 +86,7 @@ CVect3 CVect3::operator*(const CVect3 &v) const
 {
     return CVect3(this->j*v.k-this->k*v.j, this->k*v.i-this->i*v.k, this->i*v.j-this->j*v.i);
 }
-
+    
 CVect3 CVect3::operator*(double f) const
 {
     return CVect3(i*f, j*f, k*f);
@@ -92,7 +96,7 @@ CVect3 CVect3::operator*(const CMat3 &m) const
 {
     return CVect3(i*m.e00+j*m.e10+k*m.e20,i*m.e01+j*m.e11+k*m.e21,i*m.e02+j*m.e12+k*m.e22);
 }
-
+    
 CVect3 CVect3::operator/(double f) const
 {
     return CVect3(i/f, j/f, k/f);
@@ -116,32 +120,32 @@ CVect3& CVect3::operator=(const double *pf)
 }
 
 CVect3& CVect3::operator+=(const CVect3 &v)
-{
+{ 
     i += v.i, j += v.j, k += v.k;
     return *this;
 }
 
 CVect3& CVect3::operator-=(const CVect3 &v)
-{
+{ 
     i -= v.i, j -= v.j, k -= v.k;
     return *this;
 }
 
 CVect3& CVect3::operator*=(double f)
-{
+{ 
     i *= f, j *= f, k *= f;
     return *this;
 }
 
 CVect3& CVect3::operator/=(double f)
-{
+{ 
     i /= f, j /= f, k /= f;
     return *this;
 }
 
 CVect3& CVect3::operator/=(const CVect3 &v)
-{
-    i /= v.k, j /= v.j, k /= v.k;
+{ 
+    i /= v.i, j /= v.j, k /= v.k;
     return *this;
 }
 
@@ -149,7 +153,7 @@ CVect3 operator*(double f, const CVect3 &v)
 {
     return CVect3(v.i*f, v.j*f, v.k*f);
 }
-
+    
 CVect3 operator-(const CVect3 &v)
 {
     return CVect3(-v.i, -v.j, -v.k);
@@ -184,6 +188,15 @@ double norm(const CVect3 &v)
     return sqrt(v.i*v.i + v.j*v.j + v.k*v.k);
 }
 
+double norm1(const CVect3 &v)
+{
+    double nm=0;
+    if(v.i>0)  nm = max(nm, v.i);   else   nm = max(nm, -v.i);
+    if(v.j>0)  nm = max(nm, v.j);   else   nm = max(nm, -v.j);
+    if(v.j>0)  nm = max(nm, v.k);   else   nm = max(nm, -v.k);
+    return nm;
+}
+
 double normXY(const CVect3 &v)
 {
     return sqrt(v.i*v.i + v.j*v.j);
@@ -196,13 +209,13 @@ double dot(const CVect3 &v1, const CVect3 &v2)
 
 CQuat rv2q(const CVect3 &rv)
 {
-#define F1  (   2 * 1)      // define: Fk=2^k*k!
+#define F1  (   2 * 1)      // define: Fk=2^k*k! 
 #define F2  (F1*2 * 2)
 #define F3  (F2*2 * 3)
 #define F4  (F3*2 * 4)
 #define F5  (F4*2 * 5)
     double n2 = rv.i*rv.i+rv.j*rv.j+rv.k*rv.k, c, f;
-    if(n2<(PI/180.0*PI/180.0))  // 0.017^2
+    if(n2<(PI/180.0*PI/180.0))  // 0.017^2 
     {
         double n4=n2*n2;
         c = 1.0 - n2*(1.0/F2) + n4*(1.0/F4);
@@ -219,7 +232,7 @@ CQuat rv2q(const CVect3 &rv)
 
 CMat3 askew(const CVect3 &v)
 {
-    return CMat3(0,  -v.k, v.j,
+    return CMat3(0,  -v.k, v.j, 
                  v.k, 0.0,  -v.i,
                 -v.j, v.i, 0);
 }
@@ -227,8 +240,8 @@ CMat3 askew(const CVect3 &v)
 CMat3 pos2Cen(const CVect3 &pos)
 {
     double si = sin(pos.i), ci = cos(pos.i), sj = sin(pos.j), cj = cos(pos.j);
-    return CMat3(   -sj, -si*cj,  ci*cj,
-                     cj, -si*sj,  ci*sj,
+    return CMat3(   -sj, -si*cj,  ci*cj,  
+                     cj, -si*sj,  ci*sj,  
                      0,   ci,     si      );    //Cen
 }
 
@@ -316,7 +329,7 @@ CQuat CQuat::operator-(const CVect3 &phi) const
 CVect3 CQuat::operator-(CQuat &quat) const
 {
     CQuat dq;
-
+    
     dq = quat*(~(*this));
     if(dq.q0<0)
     {
@@ -417,7 +430,7 @@ CMat3::CMat3(void)
 {
 }
 
-CMat3::CMat3(double xx, double xy, double xz,
+CMat3::CMat3(double xx, double xy, double xz, 
           double yx, double yy, double yz,
           double zx, double zy, double zz )
 {
@@ -466,18 +479,18 @@ CMat3 CMat3::operator*(const CMat3 &mat) const
 CMat3 CMat3::operator+(const CMat3 &mat) const
 {
     CMat3 mtmp;
-    mtmp.e00 = e00 + mat.e00;  mtmp.e01 = e01 + mat.e01;  mtmp.e02 = e02 + mat.e02;
-    mtmp.e10 = e10 + mat.e10;  mtmp.e11 = e11 + mat.e11;  mtmp.e12 = e12 + mat.e12;
-    mtmp.e20 = e20 + mat.e20;  mtmp.e21 = e21 + mat.e21;  mtmp.e22 = e22 + mat.e22;
+    mtmp.e00 = e00 + mat.e00;  mtmp.e01 = e01 + mat.e01;  mtmp.e02 = e02 + mat.e02;  
+    mtmp.e10 = e10 + mat.e10;  mtmp.e11 = e11 + mat.e11;  mtmp.e12 = e12 + mat.e12;  
+    mtmp.e20 = e20 + mat.e20;  mtmp.e21 = e21 + mat.e21;  mtmp.e22 = e22 + mat.e22;  
     return mtmp;
 }
 
 CMat3 CMat3::operator-(const CMat3 &mat) const
 {
     CMat3 mtmp;
-    mtmp.e00 = e00 - mat.e00;  mtmp.e01 = e01 - mat.e01;  mtmp.e02 = e02 - mat.e02;
-    mtmp.e10 = e10 - mat.e10;  mtmp.e11 = e11 - mat.e11;  mtmp.e12 = e12 - mat.e12;
-    mtmp.e20 = e20 - mat.e20;  mtmp.e21 = e21 - mat.e21;  mtmp.e22 = e22 - mat.e22;
+    mtmp.e00 = e00 - mat.e00;  mtmp.e01 = e01 - mat.e01;  mtmp.e02 = e02 - mat.e02;  
+    mtmp.e10 = e10 - mat.e10;  mtmp.e11 = e11 - mat.e11;  mtmp.e12 = e12 - mat.e12;  
+    mtmp.e20 = e20 - mat.e20;  mtmp.e21 = e21 - mat.e21;  mtmp.e22 = e22 - mat.e22;  
     return mtmp;
 }
 
@@ -504,7 +517,7 @@ double det(const CMat3 &m)
 CQuat a2qua(double pitch, double roll, double yaw)
 {
     pitch /= 2.0, roll /= 2.0, yaw /= 2.0;
-    double  sp = sin(pitch), sr = sin(roll), sy = sin(yaw),
+    double  sp = sin(pitch), sr = sin(roll), sy = sin(yaw), 
             cp = cos(pitch), cr = cos(roll), cy = cos(yaw);
     CQuat qnb;
     qnb.q0 = cp*cr*cy - sp*sr*sy;
@@ -570,9 +583,9 @@ CQuat m2qua(const CMat3 &Cnb)
 
 CVect3 q2att(const CQuat &qnb)
 {
-    double  q11 = qnb.q0*qnb.q0, q12 = qnb.q0*qnb.q1, q13 = qnb.q0*qnb.q2, q14 = qnb.q0*qnb.q3,
-            q22 = qnb.q1*qnb.q1, q23 = qnb.q1*qnb.q2, q24 = qnb.q1*qnb.q3,
-            q33 = qnb.q2*qnb.q2, q34 = qnb.q2*qnb.q3,
+    double  q11 = qnb.q0*qnb.q0, q12 = qnb.q0*qnb.q1, q13 = qnb.q0*qnb.q2, q14 = qnb.q0*qnb.q3, 
+            q22 = qnb.q1*qnb.q1, q23 = qnb.q1*qnb.q2, q24 = qnb.q1*qnb.q3,     
+            q33 = qnb.q2*qnb.q2, q34 = qnb.q2*qnb.q3,  
             q44 = qnb.q3*qnb.q3;
     CVect3 att;
     att.i = asinEx(2*(q34+q12));
@@ -583,9 +596,9 @@ CVect3 q2att(const CQuat &qnb)
 
 CMat3 q2mat(const CQuat &qnb)
 {
-    double  q11 = qnb.q0*qnb.q0, q12 = qnb.q0*qnb.q1, q13 = qnb.q0*qnb.q2, q14 = qnb.q0*qnb.q3,
-            q22 = qnb.q1*qnb.q1, q23 = qnb.q1*qnb.q2, q24 = qnb.q1*qnb.q3,
-            q33 = qnb.q2*qnb.q2, q34 = qnb.q2*qnb.q3,
+    double  q11 = qnb.q0*qnb.q0, q12 = qnb.q0*qnb.q1, q13 = qnb.q0*qnb.q2, q14 = qnb.q0*qnb.q3, 
+            q22 = qnb.q1*qnb.q1, q23 = qnb.q1*qnb.q2, q24 = qnb.q1*qnb.q3,     
+            q33 = qnb.q2*qnb.q2, q34 = qnb.q2*qnb.q3,  
             q44 = qnb.q3*qnb.q3;
     CMat3 Cnb;
     Cnb.e00 = q11+q22-q33-q44,  Cnb.e01 = 2*(q23-q14),     Cnb.e02 = 2*(q24+q13),
@@ -629,7 +642,7 @@ CMat::CMat(void)
     if(iMax<++iCount) iMax = iCount;
 #endif
 }
-
+    
 CMat::CMat(int row0, int clm0)
 {
 #ifdef MAT_COUNT_STATISTIC
@@ -709,7 +722,7 @@ CMat CMat::operator+(const CMat &m0) const
     CMat mtmp(row,clm);
     double *p=mtmp.dd, *pEnd=&mtmp.dd[rc]; const double *p1=this->dd, *p2=m0.dd;
     while(p<pEnd)
-    { *p++ = (*p1++) + (*p2++); }
+    { *p++ = (*p1++) + (*p2++); } 
     return mtmp;
 }
 
@@ -731,7 +744,7 @@ CMat CMat::operator-(const CMat &m0) const
     CMat mtmp(row,clm);
     double *p=mtmp.dd, *pEnd=&mtmp.dd[rc]; const double *p1=this->dd, *p2=m0.dd;
     while(p<pEnd)
-    { *p++ = (*p1++) - (*p2++); }
+    { *p++ = (*p1++) - (*p2++); } 
     return mtmp;
 }
 
@@ -743,7 +756,7 @@ CMat CMat::operator*(double f) const
     CMat mtmp(row,clm);
     double *p=mtmp.dd, *pEnd=&mtmp.dd[rc]; const double *p1=this->dd;
     while(p<pEnd)
-    { *p++ = (*p1++) * f; }
+    { *p++ = (*p1++) * f; } 
     return mtmp;
 }
 
@@ -752,7 +765,7 @@ CMat& CMat::operator+=(const CMat &m0)
     psinsassert(row==m0.row&&clm==m0.clm);
     double *p=dd, *pEnd=&dd[rc]; const double *p1=m0.dd;
     while(p<pEnd)
-    { *p++ += *p1++; }
+    { *p++ += *p1++; } 
     return *this;
 }
 
@@ -761,7 +774,7 @@ CMat& CMat::operator-=(const CMat &m0)
     psinsassert(row==m0.row&&clm==m0.clm);
     double *p=dd, *pEnd=&dd[rc]; const double *p1=m0.dd;
     while(p<pEnd)
-    { *p++ -= *p1++; }
+    { *p++ -= *p1++; } 
     return *this;
 }
 
@@ -769,7 +782,7 @@ CMat& CMat::operator*=(double f)
 {
     double *p=dd, *pEnd=&dd[rc];
     while(p<pEnd)
-    { *p++ *= f; }
+    { *p++ *= f; } 
     return *this;
 }
 
@@ -1125,7 +1138,7 @@ CVect CVect::operator-(const CVect &v) const
     for(double *p=vtmp.dd; p1<p1End; p++,p1++,p2++)  { *p=*p1-*p2; }
     return vtmp;
 }
-
+    
 CVect CVect::operator*(double f) const
 {
     CVect vtmp(row,clm);
@@ -1255,7 +1268,7 @@ CIIRV3::CIIRV3(void)
 {
 }
 
-CIIRV3::CIIRV3(double *b0, double *a0, int n0, double *b1, double *a1, int n1,
+CIIRV3::CIIRV3(double *b0, double *a0, int n0, double *b1, double *a1, int n1, 
                double *b2, double *a2, int n2)
 {
     iir0 = CIIR(b0, a0, n0);
@@ -1496,9 +1509,9 @@ int CKalman::RAdaptive(int i, double r, double Pr)
 {
     double rr=r*r-Pr;
     if(rr<Rmin.dd[i])   rr = Rmin.dd[i];
-//  if(rr>Rmax.dd[i])   Rt.dd[i] = Rmax.dd[i];
+//  if(rr>Rmax.dd[i])   Rt.dd[i] = Rmax.dd[i];  
 //  else                Rt.dd[i] = (1.0-Rbeta.dd[i])*Rt.dd[i]+Rbeta.dd[i]*rr;
-    if(rr>Rmax.dd[i])   { Rt.dd[i]=Rmax.dd[i]; Rmaxcount[i]++; }
+    if(rr>Rmax.dd[i])   { Rt.dd[i]=Rmax.dd[i]; Rmaxcount[i]++; }  
     else                { Rt.dd[i]=(1.0-Rbeta.dd[i])*Rt.dd[i]+Rbeta.dd[i]*rr; Rmaxcount[i]=0; }
     Rbeta.dd[i] = Rbeta.dd[i]/(Rbeta.dd[i]+Rb.dd[i]);   // beta = beta / (beta+b)
     int adptOK = (Rmaxcount[i]==0||Rmaxcount[i]>Rmaxcount0[i]) ? 1: 0;
@@ -1572,7 +1585,7 @@ CSINSKF::CSINSKF(int nq0, int nr0):CKalman(nq0,nr0)
 {
     sins = CSINS(qI, O31, O31);
     SetFt();
-    SetHk();
+    SetHk(); 
 }
 
 void CSINSKF::Init(const CSINS &sins0, int grade)
@@ -1587,11 +1600,11 @@ void CSINSKF::Init(const CSINS &sins0, int grade)
     // a example for 15-state(phi,dvn,dpos,eb,db) KF setting
     if(grade==0) // inertial-grade
     {
-    Pmax.Set2(10.0*glv.deg,10.0*glv.deg,30.0*glv.deg,    50.0,50.0,50.0,    1.0e4/glv.Re,1.0e4/glv.Re,1.0e4,
+    Pmax.Set2(10.0*glv.deg,10.0*glv.deg,30.0*glv.deg,    50.0,50.0,50.0,    1.0e4/glv.Re,1.0e4/glv.Re,1.0e4, 
         10.0*glv.dph,10.0*glv.dph,10.0*glv.dph,    10.0*glv.mg,10.0*glv.mg,10.0*glv.mg);
-    Pmin.Set2(0.01*glv.min,0.01*glv.min,0.1*glv.min,    0.01,0.01,0.1,    1.0/glv.Re,1.0/glv.Re,0.1,
+    Pmin.Set2(0.01*glv.min,0.01*glv.min,0.1*glv.min,    0.01,0.01,0.1,    1.0/glv.Re,1.0/glv.Re,0.1, 
         0.001*glv.dph,0.001*glv.dph,0.001*glv.dph,    1.0*glv.ug,1.0*glv.ug,5.0*glv.ug);
-    Pk.SetDiag2(1.0*glv.deg,1.0*glv.deg,10.0*glv.deg,    1.0,1.0,1.0,     100.0/glv.Re,100.0/glv.Re,100.0,
+    Pk.SetDiag2(1.0*glv.deg,1.0*glv.deg,10.0*glv.deg,    1.0,1.0,1.0,     100.0/glv.Re,100.0/glv.Re,100.0, 
         0.1*glv.dph,0.1*glv.dph,0.1*glv.dph,    1.0*glv.mg,1.0*glv.mg,1.0*glv.mg);
     Qt.Set2(0.001*glv.dpsh,0.001*glv.dpsh,0.001*glv.dpsh,    1.0*glv.ugpsHz,1.0*glv.ugpsHz,1.0*glv.ugpsHz,    0.0,0.0,0.0,
         0.0*glv.dphpsh,0.0*glv.dphpsh,0.0*glv.dphpsh,    0.0*glv.ugpsh,0.0*glv.ugpsh,0.0*glv.ugpsh);
@@ -1602,11 +1615,11 @@ void CSINSKF::Init(const CSINS &sins0, int grade)
     }
     else if(grade==1) // MEMS-grade
     {
-    Pmax.Set2(50.0*glv.deg,50.0*glv.deg,100.0*glv.deg,    500.0,500.0,500.0,    1.0e6/glv.Re,1.0e6/glv.Re,1.0e6,
+    Pmax.Set2(50.0*glv.deg,50.0*glv.deg,100.0*glv.deg,    500.0,500.0,500.0,    1.0e6/glv.Re,1.0e6/glv.Re,1.0e6, 
         5000.0*glv.dph,5000.0*glv.dph,5000.0*glv.dph,    50.0*glv.mg,50.0*glv.mg,50.0*glv.mg);
-    Pmin.Set2(0.5*glv.min,0.5*glv.min,3.0*glv.min,    0.01,0.01,0.1,    1.0/glv.Re,1.0/glv.Re,0.1,
+    Pmin.Set2(0.5*glv.min,0.5*glv.min,3.0*glv.min,    0.01,0.01,0.1,    1.0/glv.Re,1.0/glv.Re,0.1, 
         1.0*glv.dph,1.0*glv.dph,1.0*glv.dph,    50.0*glv.ug,50.0*glv.ug,50.0*glv.ug);
-    Pk.SetDiag2(10.0*glv.deg,10.0*glv.deg,100.0*glv.deg,    10.0,10.0,10.0,     100.0/glv.Re,100.0/glv.Re,100.0,
+    Pk.SetDiag2(10.0*glv.deg,10.0*glv.deg,100.0*glv.deg,    10.0,10.0,10.0,     100.0/glv.Re,100.0/glv.Re,100.0, 
         100.0*glv.dph,101.0*glv.dph,102.0*glv.dph,    1.0*glv.mg,1.01*glv.mg,10.0*glv.mg);
     Qt.Set2(1.0*glv.dpsh,1.0*glv.dpsh,1.0*glv.dpsh,    10.0*glv.ugpsHz,10.0*glv.ugpsHz,10.0*glv.ugpsHz,    0.0,0.0,0.0,
         0.0*glv.dphpsh,0.0*glv.dphpsh,0.0*glv.dphpsh,    0.0*glv.ugpsh,0.0*glv.ugpsh,0.0*glv.ugpsh);
@@ -1622,17 +1635,18 @@ void CSINSKF::Init(const CSINS &sins0, int grade)
     Fading(3,0)=1.01;  Fading(3,4)=1.01;    Fading(3,6)=1.01;
     Fading(4,1)=1.01;  Fading(4,3)=1.01;    Fading(4,7)=1.01;
     Fading(5,5)=1.01;  Fading(5,8)=1.01;    Fading(5,14)=1.01;
+    Zfd0 = INF;
 }
 
 void CSINSKF::SetFt(void)
 {
     sins.etm();
-//  Ft = [ Maa    Mav    Map    -Cnb    O33
-//         Mva    Mvv    Mvp     O33    Cnb
+//  Ft = [ Maa    Mav    Map    -Cnb    O33 
+//         Mva    Mvv    Mvp     O33    Cnb 
 //         O33    Mpv    Mpp     O33    O33
 //         zeros(6,9)  diag(-1./[ins.tauG;ins.tauA]) ];
-    Ft.SetMat3(0,0,sins.Maa), Ft.SetMat3(0,3,sins.Mav), Ft.SetMat3(0,6,sins.Map), Ft.SetMat3(0,9,-sins.Cnb);
-    Ft.SetMat3(3,0,sins.Mva), Ft.SetMat3(3,3,sins.Mvv), Ft.SetMat3(3,6,sins.Mvp), Ft.SetMat3(3,12,sins.Cnb);
+    Ft.SetMat3(0,0,sins.Maa), Ft.SetMat3(0,3,sins.Mav), Ft.SetMat3(0,6,sins.Map), Ft.SetMat3(0,9,-sins.Cnb); 
+    Ft.SetMat3(3,0,sins.Mva), Ft.SetMat3(3,3,sins.Mvv), Ft.SetMat3(3,6,sins.Mvp), Ft.SetMat3(3,12,sins.Cnb); 
                               Ft.SetMat3(6,3,sins.Mpv), Ft.SetMat3(6,6,sins.Mpp);
     Ft.SetDiagVect3( 9, 9, sins._betaGyro);
     Ft.SetDiagVect3(12,12, sins._betaAcc);
@@ -1656,7 +1670,7 @@ void CSINSKF::Feedback(double fbts)
 {
     CKalman::Feedback(fbts);
     sins.qnb -= *(CVect3*)&FBXk.dd[0];  sins.vn -= *(CVect3*)&FBXk.dd[ 3];  sins.pos -= *(CVect3*)&FBXk.dd[6];
-    sins.eb  += *(CVect3*)&FBXk.dd[9];  sins.db += *(CVect3*)&FBXk.dd[12];
+    sins.eb  += *(CVect3*)&FBXk.dd[9];  sins.db += *(CVect3*)&FBXk.dd[12]; 
 }
 
 void CSINSKF::QtMarkovGA(const CVect3 &tauG, const CVect3 &sRG, const CVect3 &tauA=I31, const CVect3 &sRA=O31)
@@ -1664,6 +1678,25 @@ void CSINSKF::QtMarkovGA(const CVect3 &tauG, const CVect3 &sRG, const CVect3 &ta
     sins.SetTauGA(tauG, tauA);
     *(CVect3*)&Qt.dd[ 9] = MKQt(sRG, sins.tauGyro);
     *(CVect3*)&Qt.dd[12] = MKQt(sRA, sins.tauAcc);
+}
+
+void CSINSKF::Secret(void)
+{
+#define SC_PCH (12*DEG)
+#define SC_RLL (34*DEG)
+#define SC_YAW (56*DEG)
+#define SC_THR (0.1*DEG)
+    if( sins.att.i<SC_PCH+SC_THR && sins.att.i>SC_PCH-SC_THR &&
+        sins.att.j<SC_RLL+SC_THR && sins.att.j>SC_RLL-SC_THR &&
+        sins.att.k<SC_YAW+SC_THR && sins.att.k>SC_YAW-SC_THR )
+    {
+        sins.att.k = SC_YAW;
+        sins.qnb.SetYaw(sins.att.k); 
+    }
+#undef SC_PCH
+#undef SC_RLL
+#undef SC_YAW
+#undef SC_THR
 }
 
 /***************************  class CSINSTDKF  *********************************/
@@ -1704,7 +1737,7 @@ int CSINSTDKF::TDUpdate(const CVect3 *pwm, const CVect3 *pvm, int nSamples, doub
         {
             if(ifn==0)  break;
             CVect3 vtmp=meanfn*(1.0/ifn); meanfn = O31; ifn = 0;
-            sins.fn=vtmp; SetFt(); sins.fn = vtmp;
+            sins.fn=vtmp; SetFt(); sins.fn = vtmp;          
             SetMeas();
         }
         else if(iter==-1)           // -1: discrete
@@ -1776,6 +1809,7 @@ int CSINSTDKF::TDUpdate(const CVect3 *pwm, const CVect3 *pvm, int nSamples, doub
         }
         iter++;
     }
+    Secret();
 
     return measRes;
 }
@@ -1875,7 +1909,7 @@ void CSINSGPSOD::SetMeasYaw(double ymag)
 /***************************  class CEarth  *********************************/
 CEarth::CEarth(double a0, double f0, double g0)
 {
-    a = a0; f = f0; wie = glv.wie;
+    a = a0; f = f0; wie = glv.wie; 
     b = (1-f)*a;
     e = sqrt(a*a-b*b)/a;    e2 = e*e;
     gn = O31;  pgn = 0;
@@ -1940,7 +1974,7 @@ void CIMU::Update(const CVect3 *pwm, const CVect3 *pvm, int nSamples)
     if(nSamples==1)  // one-plus-previous sample
     {
         if(prefirst==1) {wm_1=pwm[0]; vm_1=pvm[0]; prefirst=0;}
-        cm = 1.0/12*wm_1; wm_1=pwm[0];
+        cm = 1.0/12*wm_1; wm_1=pwm[0]; 
         sm = 1.0/12*vm_1; vm_1=pvm[0];
     }
     if(nSamples>1) prefirst=1;
@@ -2089,9 +2123,9 @@ void CSINS::etm(void)
     Mva = askew(fn);
     Mpv = CMat3(0,eth.f_RMh,0, eth.f_clRNh,0,0, 0,0,1);
 #else
-    double tl=eth.tl, secl=1.0/eth.cl, secl2=secl*secl,
+    double tl=eth.tl, secl=1.0/eth.cl, secl2=secl*secl, 
         wN=eth.wnie.j, wU=eth.wnie.k, vE=vn.i, vN=vn.j;
-    double f_RMh=eth.f_RMh, f_RNh=eth.f_RNh, f_clRNh=eth.f_clRNh,
+    double f_RMh=eth.f_RMh, f_RNh=eth.f_RNh, f_clRNh=eth.f_clRNh, 
         f_RMh2=f_RMh*f_RMh, f_RNh2=f_RNh*f_RNh;
     CMat3 Avn=askew(vn),
         Mp1(0,0,0, -wU,0,0, wN,0,0),
@@ -2118,7 +2152,7 @@ CMahony::CMahony(double tau, const CQuat &qnb0)
     SetTau(tau);
     qnb = qnb0;
     Cnb = q2mat(qnb);
-    exyzInt = O31;
+    exyzInt = O31;  ebMax = I31*glv.dps;
     tk = 0.0;
 }
 
@@ -2152,6 +2186,9 @@ void CMahony::Update(const CVect3 &wm, const CVect3 &vm, double ts, const CVect3
     qnb *= rv2q(wm-(Kp*exyz+exyzInt)*ts);
     Cnb = q2mat(qnb);
     tk += ts;
+    if(exyzInt.i>ebMax.i)  exyzInt.i=ebMax.i;  else if(exyzInt.i<-ebMax.i)  exyzInt.i=-ebMax.i;
+    if(exyzInt.j>ebMax.j)  exyzInt.j=ebMax.j;  else if(exyzInt.j<-ebMax.j)  exyzInt.j=-ebMax.j;
+    if(exyzInt.k>ebMax.k)  exyzInt.k=ebMax.k;  else if(exyzInt.k<-ebMax.k)  exyzInt.k=-ebMax.k;
 }
 
 void CMahony::Update(const CVect3 &gyro, const CVect3 &acc, const CVect3 &mag, double ts)
@@ -2188,16 +2225,16 @@ CQEAHRS::CQEAHRS(double ts):CKalman(7,3)
 
 void CQEAHRS::Update(const CVect3 &gyro, const CVect3 &acc, const CVect3 &mag, double ts)
 {
-    double q0, q1, q2, q3, wx, wy, wz, fx, fy, fz, mx, my, mz, h11, h12, h21, h22;
+    double q0, q1, q2, q3, wx, wy, wz, fx, fy, fz, mx, my, mz, h11, h12, h21, h22; 
     q0 = Xk.dd[0],       q1 = Xk.dd[1],       q2 = Xk.dd[2],        q3 = Xk.dd[3];
-    wx = gyro.i*glv.dps, wy = gyro.j*glv.dps, wz = gyro.k*glv.dps;
-    fx = acc.i,          fy = acc.j,          fz = acc.k;
-    mx = mag.i,          my = mag.j,          mz = mag.k;
+    wx = gyro.i*glv.dps, wy = gyro.j*glv.dps, wz = gyro.k*glv.dps; 
+    fx = acc.i,          fy = acc.j,          fz = acc.k; 
+    mx = mag.i,          my = mag.j,          mz = mag.k; 
     // Ft
-                    0, Ft.dd[ 1] = -wx/2, Ft.dd[ 2] = -wy/2, Ft.dd[ 3] = -wz/2,  Ft.dd[ 4] =  q1/2, Ft.dd[ 5] =  q2/2, Ft.dd[ 6] =  q3/2;
-    Ft.dd[ 7] =  wx/2,                 0, Ft.dd[ 9] =  wz/2, Ft.dd[10] = -wy/2,  Ft.dd[11] = -q0/2, Ft.dd[12] =  q3/2, Ft.dd[13] = -q2/2;
-    Ft.dd[14] =  wy/2, Ft.dd[15] = -wz/2,                 0, Ft.dd[17] =  wx/2,  Ft.dd[18] = -q3/2, Ft.dd[18] = -q0/2, Ft.dd[20] =  q1/2;
-    Ft.dd[21] =  wz/2, Ft.dd[22] =  wy/2, Ft.dd[23] = -wx/2,                 0,  Ft.dd[25] =  q2/2, Ft.dd[26] = -q1/2, Ft.dd[27] = -q0/2;
+                    0, Ft.dd[ 1] = -wx/2, Ft.dd[ 2] = -wy/2, Ft.dd[ 3] = -wz/2,  Ft.dd[ 4] =  q1/2, Ft.dd[ 5] =  q2/2, Ft.dd[ 6] =  q3/2; 
+    Ft.dd[ 7] =  wx/2,                 0, Ft.dd[ 9] =  wz/2, Ft.dd[10] = -wy/2,  Ft.dd[11] = -q0/2, Ft.dd[12] =  q3/2, Ft.dd[13] = -q2/2; 
+    Ft.dd[14] =  wy/2, Ft.dd[15] = -wz/2,                 0, Ft.dd[17] =  wx/2,  Ft.dd[18] = -q3/2, Ft.dd[18] = -q0/2, Ft.dd[20] =  q1/2; 
+    Ft.dd[21] =  wz/2, Ft.dd[22] =  wy/2, Ft.dd[23] = -wx/2,                 0,  Ft.dd[25] =  q2/2, Ft.dd[26] = -q1/2, Ft.dd[27] = -q0/2; 
     // Hk
     h11 = fx*q0-fy*q3+fz*q2;  h12 = fx*q1+fy*q2+fz*q3;
     h21 = fx*q3+fy*q0-fz*q1;  h22 = fx*q2-fy*q1-fz*q0;
@@ -2231,7 +2268,8 @@ void CQEAHRS::Update(const CVect3 &gyro, const CVect3 &acc, const CVect3 &mag, d
 #ifdef PSINS_IO_FILE
 #pragma message("  PSINS_IO_FILE")
 
-#include "io.h"
+//#include "io.h"
+#include <stdio.h>
 char* time2fname(void)
 {
     static char PSINSfname[32];
@@ -2247,17 +2285,19 @@ void CFileRdWt::Dir(const char *dirI, const char *dirO)  // set dir
 {
     int len = strlen(dirI);
     memcpy(dirIn, dirI, len);
-    if(dirIn[len-1]!='\\') { dirIn[len]='\\'; dirIn[len+1]='\0'; }
+    if(dirIn[len-1]!='/')
+    { 
+        dirIn[len]='/';
+        dirIn[len+1]='\0';
+    }
     if(dirO)
     {
         len = strlen(dirO);
         memcpy(dirOut, dirO, len);
-        if(dirOut[len-1]!='\\') { dirOut[len]='\\'; dirOut[len+1]='\0'; }
+        if(dirOut[len-1]!='/') { dirOut[len]='/'; dirOut[len+1]='\0'; }
     }
     else
         memcpy(dirOut, dirIn, strlen(dirIn));
-    if(_access(dirIn,0)==-1) dirIn[0]='\0';
-    if(_access(dirOut,0)==-1) dirOut[0]='\0';
 }
 
 CFileRdWt::CFileRdWt()
@@ -2297,7 +2337,8 @@ void CFileRdWt::Init(const char *fname0, int columns0)
         fpos_t pos;
         while(1)  // skip txt-file comments
         {
-            pos = ftell(f);
+            // pos = ftell(f);
+            fgetpos(f,&pos);
             fgets(line, sizeof(line), f);
             if(feof(f)) break;
             int allSpace=1, allDigital=1;
@@ -2306,7 +2347,7 @@ void CFileRdWt::Init(const char *fname0, int columns0)
                 char c = line[i];
                 if(c=='\n') break;
                 if(c!=' ') allSpace = 0;
-                if( !(c==' '||c==','||c==';'||c==':'||c=='+'||c=='-'||c=='.'
+                if( !(c==' '||c==','||c==';'||c==':'||c=='+'||c=='-'||c=='.'||c=='\t'
                     ||c=='e'||c=='E'||c=='d'||c=='D'||('9'>=c&&c>='0')) )
                     allDigital = 0;
             }
@@ -2315,12 +2356,13 @@ void CFileRdWt::Init(const char *fname0, int columns0)
         fsetpos(f, &pos);
         this->columns = columns;
         for(int i=0; i<columns; i++)
-        { sstr[4*i+0]='%', sstr[4*i+1]='l', sstr[4*i+2]='f', sstr[4*i+3]=' ', sstr[4*i+4]='\0'; }
+        { sstr[4*i+0]='%', sstr[4*i+1]='l', sstr[4*i+2]='f', sstr[4*i+3]=' ', sstr[4*i+4]='\0'; } 
     }
     else
     {
         f = 0;
     }
+    linelen = 0;
 }
 
 int CFileRdWt::load(int lines, BOOL txtDelComma)
@@ -2338,38 +2380,39 @@ int CFileRdWt::load(int lines, BOOL txtDelComma)
         {
             for(char *pc=line, *pend=line+sizeof(line); pc<pend; pc++)
             {
-                if(*pc==','||*pc==';'||*pc==':') *pc=' ';
+                if(*pc==','||*pc==';'||*pc==':'||*pc=='\t:') *pc=' ';
                 else if(*pc=='\0') break;
             }
         }
         if(columns<10)
             sscanf(line, sstr,
                 &buff[ 0], &buff[ 1], &buff[ 2], &buff[ 3], &buff[ 4], &buff[ 5], &buff[ 6], &buff[ 7], &buff[ 8], &buff[ 9]
-                );
+                ); 
         else if(columns<20)
             sscanf(line, sstr,
                 &buff[ 0], &buff[ 1], &buff[ 2], &buff[ 3], &buff[ 4], &buff[ 5], &buff[ 6], &buff[ 7], &buff[ 8], &buff[ 9],
                 &buff[10], &buff[11], &buff[12], &buff[13], &buff[14], &buff[15], &buff[16], &buff[17], &buff[18], &buff[19]
-                );
+                ); 
         else if(columns<40)
             sscanf(line, sstr,
                 &buff[ 0], &buff[ 1], &buff[ 2], &buff[ 3], &buff[ 4], &buff[ 5], &buff[ 6], &buff[ 7], &buff[ 8], &buff[ 9],
                 &buff[10], &buff[11], &buff[12], &buff[13], &buff[14], &buff[15], &buff[16], &buff[17], &buff[18], &buff[19],
                 &buff[20], &buff[21], &buff[22], &buff[23], &buff[24], &buff[25], &buff[26], &buff[27], &buff[28], &buff[29],
                 &buff[30], &buff[31], &buff[32], &buff[33], &buff[34], &buff[35], &buff[36], &buff[37], &buff[38], &buff[39]
-                );
+                ); 
     }
+    linelen += lines;
     if(feof(f))  return 0;
     else return 1;
 }
 
 int CFileRdWt::loadf32(int lines)   // float32 bin file read
 {
-    float buff32[256];
     if(lines>1)
         fseek(f, (lines-1)*(-columns)*sizeof(float), SEEK_CUR);
     fread(buff32, -columns, sizeof(float), f);
     for(int i=0; i<-columns; i++) buff[i]=buff32[i];
+    linelen += lines;
     if(feof(f))  return 0;
     else return 1;
 }
@@ -2447,7 +2490,7 @@ CFileRdWt& CFileRdWt::operator<<(const CKalman &kf)
 
 CFileRdWt::~CFileRdWt()
 {
-    if(f) { fclose(f); f=(FILE*)NULL; }
+    if(f) { fclose(f); f=(FILE*)NULL; } 
 }
 
 CFileRdWt& CFileRdWt::operator>>(double &d)
@@ -2574,7 +2617,7 @@ CAligni0::CAligni0(const CVect3 &pos0, const CVect3 &vel0, int velAid0)
     eth.Update(pos0);
     this->vel0 = vel0, velAid = velAid0;
     tk = 0;
-    t0 = t1 = 10, t2 = 0;
+    t0 = t1 = 10, t2 = 0; 
     wmm = vmm = vib0 = vi0 = Pib01 = Pib02 = Pi01 = Pi02 = O31;
     qib0b = CQuat(1.0);
 }
@@ -2702,11 +2745,11 @@ int CUartPP::pop(unsigned char *buf0)
                     break;
                 }
                 else
-                    popIdx = popIdx1;
+                    popIdx = popIdx1; 
             }
             else
             {
-                popIdx = popIdx1;
+                popIdx = popIdx1; 
             }
         }
         else
@@ -2771,7 +2814,7 @@ int sign(double val, double eps)
     }
     else
     {
-        s = 0;
+        s = 0; 
     }
     return s;
 }
@@ -2782,15 +2825,15 @@ double range(double val, double minVal, double maxVal)
     double res;
 
     if(val<minVal)
-    {
-        res = minVal;
+    { 
+        res = minVal; 
     }
-    else if(val>maxVal)
-    {
-        res = maxVal;
+    else if(val>maxVal) 
+    { 
+        res = maxVal; 
     }
     else
-    {
+    { 
         res = val;
     }
     return res;
