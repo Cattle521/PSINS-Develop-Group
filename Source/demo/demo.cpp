@@ -14,6 +14,7 @@ int main()
 {
     CKFApp kf;
 
+    //NOTE: Here is the direcotry containing the MIT_gaotie.txt.
     CFileRdWt::Dir("./");
     CFileRdWt fin("MTI_gaotie.txt", 10);  ps=(SSensor*)fin.buff;
     CFileRdWt fins("ins.bin");

@@ -21,6 +21,8 @@ endif()
 
 # Set exectable binary file directory
 SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+# Set library output path
+SET(LIBRARY_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin)
 
 # Add header files directory
 INCLUDE_DIRECTORIES(Algorithm)
