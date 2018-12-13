@@ -1,3 +1,10 @@
+/**
+ * @file PSINS.cpp
+ * @brief PSINS Main Definetaion File
+ * @author Yan GongMing
+ * @version 1.0
+ * @date 2018-12-13
+ */
 #include "PSINS.h"
 
 const CVect3 I31(1.0), O31(0.0), Ipos(1.0/RE,1.0/RE,1.0);
@@ -37,134 +44,264 @@ CVect3::CVect3(void)
 {
 }
 
+/**
+ * @brief Create 3D-vector three elements are equal: [xyz xyz xyz]
+ * @param[in] xyz Input elements value
+ */
 CVect3::CVect3(double xyz)
 {
     i=j=k=xyz;
 }
 
+/**
+ * @brief Create 3D-vector: [xx yy zz]
+ * @param[in] xx Fisrt input element
+ * @param[in] yy Second input element
+ * @param[in] zz Third input element
+ */
 CVect3::CVect3(double xx, double yy, double zz)
 {
     i=xx, j=yy, k=zz;
 }
 
+/**
+ * @brief Create 3D-vector from a point to an array
+ * @param[in] pdata input array
+ */
 CVect3::CVect3(const double *pdata)
 {
-    i=*pdata++, j=*pdata++, k=*pdata;
+    i = *pdata++, j = *pdata++, k = *pdata;
 }
 
+/**
+ * @see CVect3::CVect3
+ */
 CVect3::CVect3(const float *pdata)
 {
-    i=*pdata++, j=*pdata++, k=*pdata;
+    i = *pdata++, j = *pdata++, k = *pdata;
 }
 
+/**
+ * @brief Determine if the vector is zero vector
+ * @param[in] v Input vector
+ * @param[in] eps Zero threshold, e.g. 1e-20
+ * @return True if v is zero vector, False if not
+ */
 BOOL IsZero(const CVect3 &v, double eps)
 {
     return (v.i<eps&&v.i>-eps && v.j<eps&&v.j>-eps && v.k<eps&&v.k>-eps);
 }
 
-BOOL sZeroXY(const CVect3 &v, double eps)
+/**
+ * @brief Determine if first two elements of vector is zero
+ * @param v     Input vector
+ * @param eps   Zero threshold, e.g. 1e-20
+ * @return True if v meet the condition, Flase if not 
+ */
+BOOL IsZeroXY(const CVect3 &v, double eps)
 {
     return (v.i<eps&&v.i>-eps && v.j<eps&&v.j>-eps);
 }
 
+/**
+ * @brief Determine if vector is NaN
+ * @param[in] v Input vector
+ * @return True if v is NaN, Flase if not 
+ * @warning  This function do NOT work at present
+ */
 BOOL IsNaN(const CVect3 &v)
 {
     return 0; //(_isnan(i) || _isnan(j) || _isnan(k));
 }
 
+/**
+ * @brief Overload operator +, [x1+x2 y1+y2 z1+z2] = [x1 y1 z1] + [x2 y2 z2]
+ * @param[in] v Input vector
+ * @return Plus result
+ */
 CVect3 CVect3::operator+(const CVect3 &v) const
 {
     return CVect3(this->i+v.i, this->j+v.j, this->k+v.k);
 }
 
+/**
+ * @brief Overload operator -, [x1-x2 y1-y2 z1-z2] = [x1 y1 z1] - [x2 y2 z2]
+ * @param[in] v Input vector
+ * @return Subtraction result
+ */
 CVect3 CVect3::operator-(const CVect3 &v) const
 {
     return CVect3(this->i-v.i, this->j-v.j, this->k-v.k);
 }
 
+/**
+ * @brief Overload operator * as cross product of vector
+ * @param[in] v Input vector
+ * @return Cross product result
+ */
 CVect3 CVect3::operator*(const CVect3 &v) const
 {
-    return CVect3(this->j*v.k-this->k*v.j, this->k*v.i-this->i*v.k, this->i*v.j-this->j*v.i);
+    return CVect3(this->j*v.k - this->k*v.j, this->k*v.i - this->i*v.k, 
+            this->i*v.j - this->j*v.i);
 }
     
+/**
+ * @brief Overload operator * as dot product
+ * @param[in] f Input number
+ * @return Dot product result
+ */
 CVect3 CVect3::operator*(double f) const
 {
     return CVect3(i*f, j*f, k*f);
 }
 
+/**
+ * @brief Overload operator * as Matrix product(row vector * Mastrix)
+ * @param[in] m Input 3D-matrix
+ * @return Matrix product result(row vector)
+ */
 CVect3 CVect3::operator*(const CMat3 &m) const
 {
-    return CVect3(i*m.e00+j*m.e10+k*m.e20,i*m.e01+j*m.e11+k*m.e21,i*m.e02+j*m.e12+k*m.e22);
+    return CVect3(i*m.e00 + j*m.e10 + k*m.e20,i*m.e01 + j*m.e11 + k*m.e21,
+            i*m.e02 + j*m.e12 + k*m.e22);
 }
     
+/**
+ * @brief Overload operator / as right-array division, [x/f y/f z/f] = [x y z]/f
+ * @param[in] f Input number
+ * @return Right-array division result
+ */
 CVect3 CVect3::operator/(double f) const
 {
     return CVect3(i/f, j/f, k/f);
 }
 
+/**
+ * @brief Overload operator / as right-arrary division, [x1/x2 y1/y2 z1/z2] = 
+ * [x1 y1 z1] - [x2 y2 z2]
+ * @param[in] v Input vector
+ * @return Right-array division result
+ */
 CVect3 CVect3::operator/(const CVect3 &v) const
 {
     return CVect3(i/v.i, j/v.j, k/v.k);
 }
 
+/**
+ * @brief Overload operator =, assign equal value [f f f] for vector
+ * @param[in] f Input number
+ * @return Assigned vector
+ */
 CVect3& CVect3::operator=(double f)
 {
     i = j = k = f;
     return *this;
 }
 
+/**
+ * @brief Overload operator =, assign value from an array(size 3)
+ * @param[in] pf Input arrary
+ * @return Assigned vector
+ */
 CVect3& CVect3::operator=(const double *pf)
 {
     i = *pf++, j = *pf++, k = *pf;
     return *this;
 }
 
+/**
+ * @brief Overload operator +=, Add and assign for two vector
+ * @param[in] v  Input vector
+ * @return Added vector
+ */
 CVect3& CVect3::operator+=(const CVect3 &v)
 { 
     i += v.i, j += v.j, k += v.k;
     return *this;
 }
 
+/**
+ * @brief Overload ooperator -=
+ * @param[in] v Input vector
+ * @return Substracted vector
+ */
 CVect3& CVect3::operator-=(const CVect3 &v)
 { 
     i -= v.i, j -= v.j, k -= v.k;
     return *this;
 }
 
+/**
+ * @brief  Overload operator *= for dot product
+ * @param[in] f Input number
+ * @return Dot producted vector
+ */
 CVect3& CVect3::operator*=(double f)
 { 
     i *= f, j *= f, k *= f;
     return *this;
 }
 
+/**
+ * @brief  Overload operator /= for right division
+ * @param[in] f Input number
+ * @return right divided vector
+ */
 CVect3& CVect3::operator/=(double f)
 { 
     i /= f, j /= f, k /= f;
     return *this;
 }
 
+/**
+ * @brief  Overload operator /= for right division
+ * @param[in] v Input vector
+ * @return right divided vector
+ */
 CVect3& CVect3::operator/=(const CVect3 &v)
 { 
     i /= v.i, j /= v.j, k /= v.k;
     return *this;
 }
 
+/**
+ * @brief Overload operator * for dot production(number x vector)
+ * @param[in] f Input number
+ * @param[in] v Input vector
+ * @return Overload vector
+ */
 CVect3 operator*(double f, const CVect3 &v)
 {
     return CVect3(v.i*f, v.j*f, v.k*f);
 }
     
+/**
+ * @brief Take a negative on vector
+ * @param[in] v Input vector
+ * @return Negative vector
+ */
 CVect3 operator-(const CVect3 &v)
 {
     return CVect3(-v.i, -v.j, -v.k);
 }
 
+/**
+ * @brief Square root for each element in the vector
+ * @param[in] v Input vector
+ * @return Square root vector 
+ */
 CVect3 sqrt(const CVect3 &v)
 {
     return CVect3(sqrt(v.i), sqrt(v.j), sqrt(v.k));
 }
 
-CVect3 pow(const CVect3 &v, int k)
+/** 
+ * @brief Power for each element in the vector
+ * @param[in] v Input vector
+ * @param[in] k order of the power(optional, default 2)
+ * @return  Power of vector
+ */
+CVect3 pow(const CVect3 &v, int k=2)
 {
     CVect3 pp = v;
     for(int i=1; i<k; i++)
@@ -174,6 +311,11 @@ CVect3 pow(const CVect3 &v, int k)
     return pp;
 }
 
+/**
+ * @brief Absolute value for each element in the vector
+ * @param[in] v Input vector
+ * @return Absolute value of vector
+ */
 CVect3 abs(const CVect3 &v)
 {
     CVect3 res;
@@ -183,11 +325,21 @@ CVect3 abs(const CVect3 &v)
     return res;
 }
 
+/**
+ * @brief Euclidean distance of vector
+ * @param[in] v Input vector
+ * @return Euclidean distance of vector 
+ */
 double norm(const CVect3 &v)
 {
     return sqrt(v.i*v.i + v.j*v.j + v.k*v.k);
 }
 
+/**
+ * @brief 
+ * @param v
+ * @return 
+ */
 double norm1(const CVect3 &v)
 {
     double nm=0;
@@ -197,6 +349,11 @@ double norm1(const CVect3 &v)
     return nm;
 }
 
+/**
+ * @brief Vector norm of X & Y components
+ * @param[in] v Input vector
+ * @return Vector norm of X & Y components
+ */
 double normXY(const CVect3 &v)
 {
     return sqrt(v.i*v.i + v.j*v.j);
@@ -209,11 +366,16 @@ double dot(const CVect3 &v1, const CVect3 &v2)
 
 CQuat rv2q(const CVect3 &rv)
 {
-#define F1  (   2 * 1)      // define: Fk=2^k*k! 
-#define F2  (F1*2 * 2)
-#define F3  (F2*2 * 3)
-#define F4  (F3*2 * 4)
-#define F5  (F4*2 * 5)
+// #define F1  (   2 * 1)      // define: Fk=2^k*k!
+// #define F2  (F1*2 * 2)
+// #define F3  (F2*2 * 3)
+// #define F4  (F3*2 * 4)
+// #define F5  (F4*2 * 5)
+    const double F1 = 2 * 1;    // define Fk = 2^k * k!
+    const double F2 = F1*2 * 2;
+    const double F3 = F2*2 * 3;
+    const double F4 = F3*2 * 4;
+    const double F5 = F4*2 * 5;
     double n2 = rv.i*rv.i+rv.j*rv.j+rv.k*rv.k, c, f;
     if(n2<(PI/180.0*PI/180.0))  // 0.017^2 
     {
