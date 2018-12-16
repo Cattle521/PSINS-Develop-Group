@@ -43,7 +43,6 @@ CGLV::CGLV(double Re, double f, double wie0, double g0)
 CVect3::CVect3(void)
 {
 }
-
 /**
  * @brief Create 3D-vector three elements are equal: [xyz xyz xyz]
  * @param[in] xyz Input elements value
@@ -80,6 +79,7 @@ CVect3::CVect3(const float *pdata)
 {
     i = *pdata++, j = *pdata++, k = *pdata;
 }
+
 
 /**
  * @brief Determine if the vector is zero vector
@@ -301,7 +301,7 @@ CVect3 sqrt(const CVect3 &v)
  * @param[in] k order of the power(optional, default 2)
  * @return  Power of vector
  */
-CVect3 pow(const CVect3 &v, int k=2)
+CVect3 pow(const CVect3 &v, int k)
 {
     CVect3 pp = v;
     for(int i=1; i<k; i++)
@@ -336,19 +336,31 @@ double norm(const CVect3 &v)
 }
 
 /**
- * @brief 
- * @param v
- * @return 
+ * @brief Infinity norm: Maximum value of the absolute values of all elements
+ * @param[in] v Input vector
+ * @return Infinity norm result
  */
-double norm1(const CVect3 &v)
+double norminf(const CVect3 &v)
 {
     double nm=0;
     if(v.i>0)  nm = max(nm, v.i);   else   nm = max(nm, -v.i);
     if(v.j>0)  nm = max(nm, v.j);   else   nm = max(nm, -v.j);
-    if(v.j>0)  nm = max(nm, v.k);   else   nm = max(nm, -v.k);
+    if(v.k>0)  nm = max(nm, v.k);   else   nm = max(nm, -v.k);
     return nm;
 }
-
+/**
+ * @brief 1_norm, sum of absolute values of all vector elements
+ * @param[in] v Input vector 
+ * @return 1_norm result
+ */
+double norm1(const CVect3 &v)
+{
+    double sum = 0;
+    sum += (v.i>0.0?v.i:-v.i);
+    sum += (v.j>0.0?v.j:-v.j);
+    sum += (v.k>0.0?v.k:-v.k);
+    return sum;
+}
 /**
  * @brief Vector norm of X & Y components
  * @param[in] v Input vector
@@ -359,18 +371,26 @@ double normXY(const CVect3 &v)
     return sqrt(v.i*v.i + v.j*v.j);
 }
 
+/**
+ * @brief Dot product of two 3-D vector
+ * @param[in] v1 First vector
+ * @param[in] v2 Second vector
+ * @return Dot product to two 3-D vector
+ */
 double dot(const CVect3 &v1, const CVect3 &v2)
 {
     return (v1.i*v2.i + v1.j*v2.j + v1.k*v2.k);
 }
 
+/**
+ * @brief Convert rotation vector to quaternion
+ * @details if a small angle is rotated(<1 deg), use Taylor series expansion
+ *      of sine or cosine, otherwise, use sine or cosine
+ * @param[in] rv Rotation vector
+ * @return Quaternion
+ */
 CQuat rv2q(const CVect3 &rv)
 {
-// #define F1  (   2 * 1)      // define: Fk=2^k*k!
-// #define F2  (F1*2 * 2)
-// #define F3  (F2*2 * 3)
-// #define F4  (F3*2 * 4)
-// #define F5  (F4*2 * 5)
     const double F1 = 2 * 1;    // define Fk = 2^k * k!
     const double F2 = F1*2 * 2;
     const double F3 = F2*2 * 3;
@@ -392,6 +412,11 @@ CQuat rv2q(const CVect3 &rv)
     return CQuat(c, f*rv.i, f*rv.j, f*rv.k);
 }
 
+/**
+ * @brief Get skew-symmetric matrix of input 3D-vector
+ * @param[in] v Input vector
+ * @return Skew-sysmmetric matrix
+ */
 CMat3 askew(const CVect3 &v)
 {
     return CMat3(0,  -v.k, v.j, 
@@ -399,6 +424,11 @@ CMat3 askew(const CVect3 &v)
                 -v.j, v.i, 0);
 }
 
+/**
+ * @brief Get DCM of e-frame to n-frame from geodetic coordinate postion
+ * @param[in] pos Geodetic coordinate postion.
+ * @return Cbn
+ */
 CMat3 pos2Cen(const CVect3 &pos)
 {
     double si = sin(pos.i), ci = cos(pos.i), sj = sin(pos.j), cj = cos(pos.j);
@@ -407,6 +437,16 @@ CMat3 pos2Cen(const CVect3 &pos)
                      0,   ci,     si      );    //Cen
 }
 
+/**
+ * @brief Calculate average velocity between two position
+ * @param[in] pos1 End postion, under geodetic coordinate
+ *      (i:lat(rad),j:lon(rad),k:hgt(m))
+ * @param[in] pos0 Start postion, under geodetic coordinate
+ *      (i:lat(rad),j:lon(rad),k:hgt(m))
+ * @param[in] ts Time span between two position(s)
+ * @param[in] pEth Earth parameter
+ * @return Velocity under n-frame(m/s)
+ */
 CVect3 pp2vn(CVect3 &pos1, CVect3 &pos0, double ts, CEarth *pEth)
 {
     double sl, cl, sl2, sq, sq2, RMh, RNh, clRNh;
@@ -425,6 +465,13 @@ CVect3 pp2vn(CVect3 &pos1, CVect3 &pos0, double ts, CEarth *pEth)
     return CVect3(vn.j*clRNh/ts, vn.i*RMh/ts, vn.k/ts);
 }
 
+/**
+ * @brief Calculate yaw angle using geomagnetic field
+ * @param[in] mag
+ * @param[in] att Eular attitue
+ * @param[in] declination
+ * @return 
+ */
 double MagYaw(const CVect3 &mag, const CVect3 &att, double declination)
 {
     CVect3 attH(att.i, att.j, 0.0);
@@ -439,16 +486,27 @@ double MagYaw(const CVect3 &mag, const CVect3 &att, double declination)
     return yaw;
 }
 
+/**
+ * @brief Convert ECEF Cartesion coordinate to geodetic coordinate
+ * @param[in] xyz  ECEF Castesion coordinate(m)
+ * @return Geodetic coordinate
+ */
 CVect3 xyz2blh(const CVect3 &xyz)
 {
     double s = normXY(xyz), theta = atan2(xyz.k*glv.Re, s*glv.Rp),
         s3 = sin(theta), c3 = cos(theta); s3 = s3*s3*s3, c3 = c3*c3*c3;
     if(s<(6378137.0*1.0*DEG))  return O31;
-    double L = atan2(xyz.j, xyz.i), B = atan2(xyz.k+glv.ep2*glv.Rp*s3, s-glv.e2*glv.Re*c3),
-        sB = sin(B), cB = cos(B), N = glv.Re/sqrt(1-glv.e2*sB*sB);
+    double L = atan2(xyz.j, xyz.i);
+    double B = atan2(xyz.k+glv.ep2*glv.Rp*s3, s-glv.e2*glv.Re*c3);
+    double sB = sin(B), cB = cos(B), N = glv.Re/sqrt(1-glv.e2*sB*sB);
     return CVect3(B, L, s/cB-N);
 }
 
+/**
+ * @brief Convert geodetic coordinate to ECEF cartesion coordinate
+ * @param[in] blh geodetic coordinate
+ * @return Cartesion coordinate
+ */
 CVect3 blh2xyz(const CVect3 &blh)
 {
     double sB = sin(blh.i), cB = cos(blh.i), sL = sin(blh.j), cL = cos(blh.j),
@@ -456,6 +514,12 @@ CVect3 blh2xyz(const CVect3 &blh)
     return CVect3((N+blh.k)*cB*cL, (N+blh.k)*cB*sL, (N*(1-glv.e2)+blh.k)*sB);
 }
 
+/**
+ * @brief Project ECEF vector to ENU coordinate system
+ * @param[in] Vxyz Vector under ECEF 
+ * @param[in] pos Geodetic coordinate pos
+ * @return vector under ENU-coordinate system
+ */
 CVect3 Vxyz2enu(const CVect3 &Vxyz, const CVect3 &pos)
 {
     return Vxyz*pos2Cen(pos);

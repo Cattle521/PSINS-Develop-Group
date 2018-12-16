@@ -129,10 +129,32 @@ extern const CGLV   glv;
 class CGLV
 {
 public:
-    double Re, f, g0, wie;                                      // the Earth's parameters
-    double e, e2, ep, ep2, Rp;
-    double mg, ug, deg, min, sec, hur, ppm, ppmpsh;                 // commonly used units
-    double dps, dph, dpsh, dphpsh, ugpsh, ugpsHz, mpsh, mpspsh, secpsh;
+    double Re;      ///< Earth equatorial radius(m)
+    double Rp;      ///< Earth polar radius(m)
+    double f;       ///< Earth oblateness
+    double g0;      ///< Earth gravity acceleration(m^2/s) 
+    double wie;     ///< Earth average rate of rotation angle(rad/s)
+    double e;       ///< Earth first eccentricity
+    double e2;      ///< Square of earth first eccentricity
+    double ep;      ///< Earth second eccentricity
+    double ep2;     ///< Square of earth second eccentricity
+    double mg;      ///< Thousandth g(gravitional acceleration unit)(10^-3)
+    double ug;      ///< Millionth g(10^-6)
+    double deg;     ///< Angle of degree:(PI/180)
+    double min;     ///< Angle/time of minute(60)
+    double sec;     ///< Angle/time of second(1/3600)
+    double hur;     ///< Time of hour(3600)
+    double ppm;     ///< Parts per million(10^-6)
+    double ppmpsh;  ///< (10^-6/sqrt(3600))
+    double dps;     ///< Degree per second(1)
+    double dph;     ///< Degree per hour(1/3600)
+    double dpsh;    ///< Degree per squared hour(1/sqrt(3600))
+    double dphpsh;  ///< Degree per hour per squared hour(1/3600/sqrt(3600))
+    double ugpsh;   ///< ug per squared hour(1/sqrt(3600))
+    double ugpsHz;  ///< ug per second(1)
+    double mpsh;    ///< meter per squared hour(1/sqrt(3600))
+    double mpspsh;  ///< meter per second per squared hour(1/1/sqrt(3600))
+    double secpsh;  ///< second per squared hour(1/3600/sqrt(3600))
 
     CGLV(double Re=6378137.0, double f=(1.0/298.257), double wie0=7.2921151467e-5, double g0=9.7803267714);
 };
@@ -140,7 +162,9 @@ public:
 class CVect3 
 {
 public:
-    double i, j, k;
+    double i;   ///< First elements of vector
+    double j;   ///< Second element of vector
+    double k;   ///< Third element of vector
 
     CVect3(void);
     CVect3(double xyz);
@@ -170,12 +194,13 @@ public:
     friend CVect3 abs(const CVect3 &v);                     // abs
     friend double norm(const CVect3 &v);                    // vector norm
     friend double norm1(const CVect3 &v);                   // vector 1-norm
+    friend double norminf(const CVect3 &v);
     friend double normXY(const CVect3 &v);                  // vector norm of X & Y components
     friend CVect3 sqrt(const CVect3 &v);                    // sqrt
-    friend CVect3 pow(const CVect3 &v, int k);              // power
+    friend CVect3 pow(const CVect3 &v, int k=2);              // power
     friend double dot(const CVect3 &v1, const CVect3 &v2);  // vector dot multiplication
     friend CMat3 a2mat(const CVect3 &att);                  // Euler angles to DCM 
-    friend CVect3 m2att(const CMat3 &Cnb);                  // DCM to Euler angles 
+    friend CVect3 m2att(const CMat3 &Cnb);                  // DCM to Euler angles
     friend CQuat a2qua(double pitch, double roll, double yaw);  // Euler angles to quaternion
     friend CQuat a2qua(const CVect3 &att);                  // Euler angles to quaternion
     friend CVect3 q2att(const CQuat &qnb);                  // quaternion to Euler angles 
