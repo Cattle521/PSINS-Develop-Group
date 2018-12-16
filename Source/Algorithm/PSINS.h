@@ -208,16 +208,18 @@ public:
     friend CVect3 q2rv(const CQuat &q);                     // quaternion to rotation vector
     friend CMat3 askew(const CVect3 &v);                    // askew matrix;
     friend CMat3 pos2Cen(const CVect3 &pos);                // to geographical position matrix
-    friend CVect3 pp2vn(const CVect3 &pos1, const CVect3 &pos0, double ts=1.0, CEarth *pEth=(CEarth*)NULL);  // position difference to velocity
+    friend CVect3 pp2vn(const CVect3 &pos1, const CVect3 &pos0, double ts = 1,
+            CEarth *pEth=(CEarth*)NULL);                    // position difference to velocity
     friend CVect3 MKQt(const CVect3 &sR, const CVect3 &tau);// first order Markov white-noise variance calculation
-    friend CMat3 dv2att(CVect3 &va1, const CVect3 &va2, CVect3 &vb1, const CVect3 &vb2);  // attitude determination using double-vector
+    friend CMat3 dv2att(CVect3 &va1, const CVect3 &va2, CVect3 &vb1,
+            const CVect3 &vb2);                              // attitude determination using double-vector
     friend CVect3 Alignsb(CVect3 wmm, CVect3 vmm, double latitude);  // align in static-base
-    friend double MagYaw(const CVect3 &mag, const CVect3 &att, double declination=0);
+    friend double MagYaw(const CVect3 &mag, const CVect3 &att,
+            double declination=0);
     friend CVect3 xyz2blh(const CVect3 &xyz);               // ECEF X/Y/Z to latitude/longitude/height
     friend CVect3 blh2xyz(const CVect3 &blh);               // latitude/longitude/height to ECEF X/Y/Z 
     friend CVect3 Vxyz2enu(const CVect3 &Vxyz, const CVect3 &pos);  // ECEF Vx/Vy/Vz to Ve/Vn/Vu
 };
-
 
 class CQuat
 {

@@ -438,16 +438,14 @@ CMat3 pos2Cen(const CVect3 &pos)
 }
 
 /**
- * @brief Calculate average velocity between two position
+ * @brief Calculate average velocity via position difference
  * @param[in] pos1 End postion, under geodetic coordinate
- *      (i:lat(rad),j:lon(rad),k:hgt(m))
  * @param[in] pos0 Start postion, under geodetic coordinate
- *      (i:lat(rad),j:lon(rad),k:hgt(m))
  * @param[in] ts Time span between two position(s)
  * @param[in] pEth Earth parameter
  * @return Velocity under n-frame(m/s)
  */
-CVect3 pp2vn(CVect3 &pos1, CVect3 &pos0, double ts, CEarth *pEth)
+CVect3 pp2vn(const CVect3 &pos1, const CVect3 &pos0, double ts, CEarth *pEth)
 {
     double sl, cl, sl2, sq, sq2, RMh, RNh, clRNh;
     if(pEth)
