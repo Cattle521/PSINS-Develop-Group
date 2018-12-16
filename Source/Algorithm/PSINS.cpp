@@ -524,32 +524,50 @@ CVect3 Vxyz2enu(const CVect3 &Vxyz, const CVect3 &pos)
 }
 
 /***************************  class CQuat  *********************************/
-CQuat::CQuat(void)
-{
-}
+CQuat::CQuat(void){}
 
-CQuat::CQuat(double qq0, double qq1, double qq2, double qq3)
-{
-    q0=qq0, q1=qq1, q2=qq2, q3=qq3;
-}
+/**
+ * @brief Quaternion initialization
+ */
+CQuat::CQuat(double q0, double q1, double q2, double q3):
+    q0(q0),q1(q1),q2(q2),q3(q3){}
 
+/**
+ * @brief Quaternion initialization by array
+ * @param[in] pdata array containing four elements
+ */
 CQuat::CQuat(const double *pdata)
 {
-    q0=*pdata++, q1=*pdata++, q2=*pdata++, q3=*pdata++;
+    q0=*pdata++, q1=*pdata++, q2=*pdata++, q3=*pdata;
 }
 
+/**
+ * @brief Quaternion add rotation vector
+ * @param[in] phi Rotation vector
+ * @return Quaternion
+ */
 CQuat CQuat::operator+(const CVect3 &phi) const
 {
     CQuat qtmp = rv2q(-phi);
     return qtmp*(*this);
 }
 
+/**
+ * @brief  Quaternion minus rotation vector
+ * @param[in] phi Rotation vector
+ * @return Quaternion
+ */
 CQuat CQuat::operator-(const CVect3 &phi) const
 {
     CQuat qtmp = rv2q(phi);
     return qtmp*(*this);
 }
 
+/**
+ * @brief Get the angle difference between two quaternions
+ * @param[in] quat
+ * @return Rotation angle
+ */
 CVect3 CQuat::operator-(CQuat &quat) const
 {
     CQuat dq;
@@ -571,6 +589,11 @@ CVect3 CQuat::operator-(CQuat &quat) const
     return CVect3(dq.q1,dq.q2,dq.q3)*f;
 }
 
+/**
+ * @brief Quaternion multiplication
+ * @param[in] quat multiplied Quaternion
+ * @return Multiplied result
+ */
 CQuat CQuat::operator*(const CQuat &quat) const
 {
     CQuat qtmp;
@@ -581,22 +604,36 @@ CQuat CQuat::operator*(const CQuat &quat) const
     return qtmp;
 }
 
+/**
+ * @brief Quaternion multiply and assign itself
+ */
 CQuat& CQuat::operator*=(const CQuat &quat)
 {
     return (*this=*this*quat);
 }
 
+/**
+ * @brief Quaternion minus the rotation angle and assign itself
+ */
 CQuat& CQuat::operator-=(const CVect3 &phi)
 {
     CQuat qtmp = rv2q(phi);
     return (*this=qtmp*(*this));
 }
 
+/**
+ * @brief Quaternion inverse(or conjugate) operator
+ */
 CQuat operator~(const CQuat &q)
 {
     return CQuat(q.q0,-q.q1,-q.q2,-q.q3);
 }
 
+/**
+ * @brief Quaternion multiply rotation vector
+ * @param[in] v Rotation vector
+ * @return rotation vector
+ */
 CVect3 CQuat::operator*(const CVect3 &v) const
 {
     CQuat qtmp;
@@ -611,6 +648,10 @@ CVect3 CQuat::operator*(const CVect3 &v) const
     return vtmp;
 }
 
+/**
+ * @brief Set yaw angle
+ * @param[in] yaw input yaw angle
+ */
 void CQuat::SetYaw(double yaw)
 {
     CVect3 att = q2att(*this);
@@ -618,12 +659,21 @@ void CQuat::SetYaw(double yaw)
     *this = a2qua(att);
 }
 
+/**
+ * @brief Quaternion normalization
+ * @param[in,out] q Input and output quaternion
+ */
 void normlize(CQuat *q)
 {
-    double nq=sqrt(q->q0*q->q0+q->q1*q->q1+q->q2*q->q2+q->q3*q->q3);
+    double nq=sqrt(q->q0*q->q0 + q->q1*q->q1 + q->q2*q->q2 + q->q3*q->q3);
     q->q0 /= nq, q->q1 /= nq, q->q2 /= nq, q->q3 /= nq;
 }
 
+/**
+ * @brief Convert quaternion to rotation angel
+ * @param[in] q Input quaternion
+ * @return Rotation angel
+ */
 CVect3 q2rv(const CQuat &q)
 {
     CQuat dq;
@@ -642,6 +692,11 @@ CVect3 q2rv(const CQuat &q)
     return CVect3(dq.q1,dq.q2,dq.q3)*f;
 }
 
+/**
+ * @brief Turn upside down the attitue, keep yaw unchanged
+ * @param[in] q Input quaternion
+ * @return Turned quaternion
+ */
 CQuat UpDown(const CQuat &q)
 {
     CVect3 att = q2att(q);
@@ -3023,24 +3078,23 @@ double dm2r(double dm)
     return sgn ? r : -r;
 }
 
-// determine the sign of 'val' with the sensitivity of 'eps'
+/**
+* @brief Determine the sign of 'val' with the sensitivity of 'eps'
+* @param[in] val Input value
+* @param[in] eps Zero threshold
+* @return 
+*   @retval -1 val is a negative number
+*   @retval 0  val equalval to zero
+*   @retval 1 val is a positive number
+*/
 int sign(double val, double eps)
 {
-    int s;
-
-    if(val<-eps)
-    {
-        s = -1;
-    }
-    else if(val>eps)
-    {
-        s = 1;
-    }
-    else
-    {
-        s = 0; 
-    }
-    return s;
+    if(val<-eps) 
+        return -1;
+    else if(val>eps) 
+        return  1;
+    else 
+        return 0;
 }
 
 // set double value 'val' between range 'minVal' and 'maxVal'
