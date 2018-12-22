@@ -211,7 +211,7 @@ public:
     friend CVect3 pp2vn(const CVect3 &pos1, const CVect3 &pos0, double ts = 1,
             CEarth *pEth=(CEarth*)NULL);                    // position difference to velocity
     friend CVect3 MKQt(const CVect3 &sR, const CVect3 &tau);// first order Markov white-noise variance calculation
-    friend CMat3 dv2att(CVect3 &va1, const CVect3 &va2, CVect3 &vb1,
+    friend CMat3 dv2att(const CVect3 &va1, const CVect3 &va2, CVect3 &vb1,
             const CVect3 &vb2);                              // attitude determination using double-vector
     friend CVect3 Alignsb(CVect3 wmm, CVect3 vmm, double latitude);  // align in static-base
     friend double MagYaw(const CVect3 &mag, const CVect3 &att,
@@ -279,7 +279,7 @@ public:
     CVect(void);
     CVect(int row0, int clm0=1);
     CVect(int row0, double f);
-    CVect(int row0, double f, double f1, ...);
+    CVect(int row0, double f, ...);
     CVect(int row0, const double *pf);
     CVect(const CVect3 &v);
     CVect(const CVect3 &v1, const CVect3 v2);
@@ -306,8 +306,10 @@ public:
 class CMat
 {
 public:
-    int row, clm, rc;
-    double dd[MMD2];
+    int row;        ///< Number of matrix row
+    int clm;        ///< Number of matrix column
+    int rc;         ///< Number of matrix size(row times column)
+    double dd[MMD2];///< Matrix elements(Max size depend on Macro MMD)
 
     CMat(void);
     CMat(int row0, int clm0);
@@ -343,7 +345,7 @@ public:
     void SubAddMat3(int i, int j, const CMat3 &m);      // add i...(i+2)-row&j...(j+2)-comumn with CMat3 m
     friend CMat operator~(const CMat &m);               // matrix transposition
     friend void symmetry(CMat &m);                      // matrix symmetrization
-    friend double norm1(CMat &m);                       // 1-norm
+    friend double norm1(const CMat &m);                 // 1-norm
     friend CVect diag(const CMat &m);                   // diagonal of a matrix
     friend CMat diag(const CVect &v);                   // diagonal matrix
     friend void RowMul(CMat &m, const CMat &m0, const CMat &m1, int r); // m(r,:)=m0(r,:)*m1

@@ -6,5 +6,5 @@
  * Here is introduction
  * \section usage   Usage
  * Here is usage
- *
+ * \section default Default interpretation
  */

@@ -20,20 +20,20 @@ CGLV::CGLV(double Re, double f, double wie0, double g0)
     Rp = (1-f)*Re;
     e = sqrt(2*f-f*f); e2 = e*e;
     ep = sqrt(Re*Re-Rp*Rp)/Rp; ep2 = ep*ep;
-    mg = g0/1000.0;
-    ug = mg/1000.0;
-    deg = PI/180.0;
-    min = deg/60.0;
-    sec = min/60.0;
-    ppm = 1.0e-6;
-    hur = 3600.0;
-    dps = deg/1.0;
-    dph = deg/hur;
-    dpsh = deg/sqrt(hur);
+    mg     = g0/1000.0;
+    ug     = mg/1000.0;
+    deg    = PI/180.0;
+    min    = deg/60.0;
+    sec    = min/60.0;
+    ppm    = 1.0e-6;
+    hur    = 3600.0;
+    dps    = deg/1.0;
+    dph    = deg/hur;
+    dpsh   = deg/sqrt(hur);
     dphpsh = dph/sqrt(hur);
     ugpsHz = ug/sqrt(1.0);
-    ugpsh = ug/sqrt(hur);
-    mpsh = 1/sqrt(hur); 
+    ugpsh  = ug/sqrt(hur);
+    mpsh   = 1/sqrt(hur);
     mpspsh = 1/1/sqrt(hur);
     ppmpsh = ppm/sqrt(hur);
     secpsh = sec/sqrt(hur);
@@ -466,7 +466,7 @@ CVect3 pp2vn(const CVect3 &pos1, const CVect3 &pos0, double ts, CEarth *pEth)
 /**
  * @brief Calculate yaw angle using geomagnetic field
  * @param[in] mag
- * @param[in] att Eular attitue
+ * @param[in] att Euler attitude
  * @param[in] declination
  * @return 
  */
@@ -693,7 +693,7 @@ CVect3 q2rv(const CQuat &q)
 }
 
 /**
- * @brief Turn upside down the attitue, keep yaw unchanged
+ * @brief Turn upside down the attitude, keep yaw unchanged
  * @param[in] q Input quaternion
  * @return Turned quaternion
  */
@@ -709,6 +709,9 @@ CMat3::CMat3(void)
 {
 }
 
+/**
+ * @brief Initalization 3D matrix by 9 number
+ */
 CMat3::CMat3(double xx, double xy, double xz, 
           double yx, double yy, double yz,
           double zx, double zy, double zz )
@@ -716,6 +719,9 @@ CMat3::CMat3(double xx, double xy, double xz,
     e00=xx,e01=xy,e02=xz; e10=yx,e11=yy,e12=yz; e20=zx,e21=zy,e22=zz;
 }
 
+/**
+ * @brief  Initalization 3D matrix by three row vector
+ */
 CMat3::CMat3(const CVect3 &v0, const CVect3 &v1, const CVect3 &v2)
 {
     e00 = v0.i, e01 = v0.j, e02 = v0.k;
@@ -723,23 +729,41 @@ CMat3::CMat3(const CVect3 &v0, const CVect3 &v1, const CVect3 &v2)
     e20 = v2.i, e21 = v2.j, e22 = v2.k;
 }
 
-CMat3 dv2att(CVect3 &va1, const CVect3 &va2, CVect3 &vb1, const CVect3 &vb2)
+/**
+ * @brief Determine attitude by double vector
+ * @param[in] va1 Projection of vector "1" in the coordinate "a"
+ * @param[in] va2 Projection of vector "2" in the coordinate "b"
+ * @param[in] vb1 Projection of vector "1" in the coordinate "a"
+ * @param[in] vb2 Projection of vector "2" in the coordinate "b"
+ * @return Attitude a to b in DCM(Cab)
+ */
+CMat3 dv2att(const CVect3 &va1, const CVect3 &va2, CVect3 &vb1, const CVect3 &vb2)
 {
     CVect3 a=va1*va2, b=vb1*vb2, aa=a*va1, bb=b*vb1;
-    CMat3 Ma(va1/norm(va1),a/norm(a),aa/norm(aa)), Mb(vb1/norm(vb1),b/norm(b),bb/norm(bb));
-    return (~Ma)*(Mb);  //Cab
+    CMat3 Ma(va1/norm(va1),a/norm(a),aa/norm(aa));
+    CMat3 Mb(vb1/norm(vb1),b/norm(b),bb/norm(bb));
+    return (~Ma)*(Mb);
 }
 
+/**
+ * @brief Negative full matrix
+ */
 CMat3 operator-(const CMat3 &m)
 {
     return CMat3(-m.e00,-m.e01,-m.e02,-m.e10,-m.e11,-m.e12,-m.e20,-m.e21,-m.e22);
 }
 
+/**
+ * @brief Matrix transpose
+ */
 CMat3 operator~(const CMat3 &m)
 {
     return CMat3(m.e00,m.e10,m.e20, m.e01,m.e11,m.e21, m.e02,m.e12,m.e22);
 }
 
+/**
+ * @brief Matrix multiplication
+ */
 CMat3 CMat3::operator*(const CMat3 &mat) const
 {
     CMat3 mtmp;
@@ -755,6 +779,9 @@ CMat3 CMat3::operator*(const CMat3 &mat) const
     return mtmp;
 }
 
+/**
+ * @brief Matrix addition
+ */
 CMat3 CMat3::operator+(const CMat3 &mat) const
 {
     CMat3 mtmp;
@@ -764,35 +791,64 @@ CMat3 CMat3::operator+(const CMat3 &mat) const
     return mtmp;
 }
 
+/**
+ * @brief Matrix subtraction
+ */
 CMat3 CMat3::operator-(const CMat3 &mat) const
 {
     CMat3 mtmp;
-    mtmp.e00 = e00 - mat.e00;  mtmp.e01 = e01 - mat.e01;  mtmp.e02 = e02 - mat.e02;  
-    mtmp.e10 = e10 - mat.e10;  mtmp.e11 = e11 - mat.e11;  mtmp.e12 = e12 - mat.e12;  
-    mtmp.e20 = e20 - mat.e20;  mtmp.e21 = e21 - mat.e21;  mtmp.e22 = e22 - mat.e22;  
+    mtmp.e00 = e00 - mat.e00; mtmp.e01 = e01 - mat.e01; mtmp.e02 = e02 - mat.e02;
+    mtmp.e10 = e10 - mat.e10; mtmp.e11 = e11 - mat.e11; mtmp.e12 = e12 - mat.e12;
+    mtmp.e20 = e20 - mat.e20; mtmp.e21 = e21 - mat.e21; mtmp.e22 = e22 - mat.e22;
     return mtmp;
 }
 
+/**
+ * @brief Matrix dot product(matrix times number)
+ */
 CMat3 CMat3::operator*(double f) const
 {
     return CMat3(e00*f,e01*f,e02*f, e10*f,e11*f,e12*f, e21*f,e20*f,e22*f);
 }
 
+/**
+ * @brief Matrix dot product(number times matrix)
+ */
 CMat3 operator*(double f, const CMat3 &m)
 {
-    return CMat3(m.e00*f,m.e01*f,m.e02*f, m.e10*f,m.e11*f,m.e12*f, m.e20*f,m.e21*f,m.e22*f);
+    return CMat3(m.e00*f,m.e01*f,m.e02*f, m.e10*f,m.e11*f,m.e12*f, 
+            m.e20*f,m.e21*f,m.e22*f);
 }
 
+/**
+ * @brief Matrix multiplied by column matrix
+ * @param[in] v 3D column vector 
+ * @return 3D column vector
+ */
 CVect3 CMat3::operator*(const CVect3 &v) const
 {
-    return CVect3(e00*v.i+e01*v.j+e02*v.k,e10*v.i+e11*v.j+e12*v.k,e20*v.i+e21*v.j+e22*v.k);
+    return CVect3(e00*v.i + e01*v.j + e02*v.k, e10*v.i + e11*v.j + e12*v.k,
+            e20*v.i + e21*v.j + e22*v.k);
 }
 
+/**
+ * @brief Determinant of matrix
+ * @param[in] m Input matrix
+ * @return Determinant(|m|)
+ */
 double det(const CMat3 &m)
 {
-    return m.e00*(m.e11*m.e22-m.e12*m.e21) - m.e01*(m.e10*m.e22-m.e12*m.e20) + m.e02*(m.e10*m.e21-m.e11*m.e20);
+    return m.e00*(m.e11*m.e22-m.e12*m.e21) - m.e01*(m.e10*m.e22-m.e12*m.e20) +
+        m.e02*(m.e10*m.e21-m.e11*m.e20);
 }
 
+/**
+ * @brief Convert Euler angle to quaternion
+ * @param[in] pitch 
+ * @param[in] roll
+ * @param[in] yaw
+ * @return Quaternion
+ */
 CQuat a2qua(double pitch, double roll, double yaw)
 {
     pitch /= 2.0, roll /= 2.0, yaw /= 2.0;
@@ -806,11 +862,21 @@ CQuat a2qua(double pitch, double roll, double yaw)
     return qnb;
 }
 
+/**
+ * @brief Convert Euler angle to quaternion
+ * @param[in] att Euler angle in 3D vector(pitch-roll-yaw)
+ * @return Quaternion
+ */
 CQuat a2qua(const CVect3 &att)
 {
     return a2qua(att.i, att.j, att.k);
 }
 
+/**
+ * @brief Convert Euler angle to DCM
+ * @param[in] att Euler angle in 3D vector(pitch-roll-yaw)
+ * @return DCM(Cnb)
+ */
 CMat3 a2mat(const CVect3 &att)
 {
     double  si = sin(att.i), ci = cos(att.i),
@@ -823,6 +889,11 @@ CMat3 a2mat(const CVect3 &att)
     return Cnb;
 }
 
+/**
+ * @brief Convert DCM to Euler angle
+ * @param[in] Cnb Input DCM
+ * @return Euler angle in 3D vector
+ */
 CVect3 m2att(const CMat3 &Cnb)
 {
     CVect3 att;
@@ -832,6 +903,11 @@ CVect3 m2att(const CMat3 &Cnb)
     return att;
 }
 
+/**
+ * @brief Convert DCM to quaternion
+ * @param[in] Cnb Input DCM
+ * @return Quaternion
+ */
 CQuat m2qua(const CMat3 &Cnb)
 {
     double q0, q1, q2, q3, qq4;
@@ -860,6 +936,11 @@ CQuat m2qua(const CMat3 &Cnb)
     return CQuat(q0, q1, q2, q3);
 }
 
+/**
+ * @brief Convert quaternion to Euler angle
+ * @param[in] qnb Input quaternion
+ * @return Euler angle in 3D vector
+ */
 CVect3 q2att(const CQuat &qnb)
 {
     double  q11 = qnb.q0*qnb.q0, q12 = qnb.q0*qnb.q1, q13 = qnb.q0*qnb.q2, q14 = qnb.q0*qnb.q3, 
@@ -873,6 +954,11 @@ CVect3 q2att(const CQuat &qnb)
     return att;
 }
 
+/**
+ * @brief Convert quaternion to DCM
+ * @param[in] qnb Input quaternion
+ * @return DCM
+ */
 CMat3 q2mat(const CQuat &qnb)
 {
     double  q11 = qnb.q0*qnb.q0, q12 = qnb.q0*qnb.q1, q13 = qnb.q0*qnb.q2, q14 = qnb.q0*qnb.q3, 
@@ -886,11 +972,18 @@ CMat3 q2mat(const CQuat &qnb)
     return Cnb;
 }
 
+/**
+ * @brief Matrix inverse
+ * @param[in] m Input matrix
+ * @return Inverse of matrix
+ */
 CMat3 inv(const CMat3 &m)
 {
     double nm;
-    nm = m.e00*(m.e11*m.e22-m.e12*m.e21) - m.e01*(m.e10*m.e22-m.e12*m.e20) + m.e02*(m.e10*m.e21-m.e11*m.e20);
+    nm = m.e00*(m.e11*m.e22-m.e12*m.e21) - m.e01*(m.e10*m.e22-m.e12*m.e20) +
+        m.e02*(m.e10*m.e21-m.e11*m.e20);
     CMat3 mtmp;
+    // if(!sign(nm)) printf("CMat3::inv Determinant of Marix near zero\n");
     mtmp.e00 =  (m.e11*m.e22-m.e12*m.e21)/nm;
     mtmp.e10 = -(m.e10*m.e22-m.e12*m.e20)/nm;
     mtmp.e20 =  (m.e10*m.e21-m.e11*m.e20)/nm;
@@ -903,11 +996,21 @@ CMat3 inv(const CMat3 &m)
     return mtmp;
 }
 
+/**
+ * @brief Get the main diagonal elements of matrix
+ * @param[in] m Input matrix
+ * @return Main diagonal elements vector
+ */
 CVect3 diag(const CMat3 &m)
 {
     return CVect3(m.e00, m.e11, m.e22);
 }
 
+/**
+ * @brief Create a main diagonal matrix by vector, 
+ * @param[in] v Input vector 
+ * @return Main diagonal matrix(other elements are zero)
+ */
 CMat3 diag(const CVect3 &v)
 {
     return CMat3(v.i,0,0, 0,v.j,0, 0,0,v.k);
@@ -921,7 +1024,12 @@ CMat::CMat(void)
     if(iMax<++iCount) iMax = iCount;
 #endif
 }
-    
+
+/**
+ * @brief Initialize the size the of CMat
+ * @param[in] row0 Number of row
+ * @param[in] clm0 Number of column
+ */
 CMat::CMat(int row0, int clm0)
 {
 #ifdef MAT_COUNT_STATISTIC
@@ -930,6 +1038,12 @@ CMat::CMat(int row0, int clm0)
     row=row0; clm=clm0; rc=row*clm;
 }
 
+/*
+ * @brief Initialize CMat's size and elements(same)
+ * @param[in] row0 Number of row
+ * @param[in] clm0 Number of column
+ * @param[in] f Input number
+ */
 CMat::CMat(int row0, int clm0, double f)
 {
 #ifdef MAT_COUNT_STATISTIC
@@ -939,6 +1053,12 @@ CMat::CMat(int row0, int clm0, double f)
     for(double *pd=dd, *pEnd=&dd[rc]; pd<pEnd; pd++)  *pd = f;
 }
 
+/**
+ * @brief Initialize CMat's size and elements by array
+ * @param[in] row0 Number of row
+ * @param[in] clm0 Number of column
+ * @param[in] pf Input array
+ */
 CMat::CMat(int row0, int clm0, const double *pf)
 {
 #ifdef MAT_COUNT_STATISTIC
@@ -956,6 +1076,9 @@ CMat::~CMat(void)
 }
 #endif
 
+/**
+ * @brief Matrix multiplication
+ */
 CMat CMat::operator*(const CMat &m0) const
 {
 #ifdef MAT_COUNT_STATISTIC
@@ -978,6 +1101,9 @@ CMat CMat::operator*(const CMat &m0) const
     return mtmp;
 }
 
+/**
+ * @brief Matrix multiply by column vector
+ */
 CVect CMat::operator*(const CVect &v) const
 {
     psinsassert(this->clm==v.row);
@@ -992,6 +1118,9 @@ CVect CMat::operator*(const CVect &v) const
     return vtmp;
 }
 
+/**
+ * @brief Matrix addition
+ */
 CMat CMat::operator+(const CMat &m0) const
 {
 #ifdef MAT_COUNT_STATISTIC
@@ -1005,6 +1134,9 @@ CMat CMat::operator+(const CMat &m0) const
     return mtmp;
 }
 
+/**
+ * @brief Matrix add main diagonal vector and assign
+ */
 CMat& CMat::operator+=(const CVect &v)
 {
     psinsassert(row==v.row||clm==v.clm);
@@ -1014,6 +1146,9 @@ CMat& CMat::operator+=(const CVect &v)
     return *this;
 }
 
+/**
+ * @brief Matrix Subtraction
+ */
 CMat CMat::operator-(const CMat &m0) const
 {
 #ifdef MAT_COUNT_STATISTIC
@@ -1027,6 +1162,9 @@ CMat CMat::operator-(const CMat &m0) const
     return mtmp;
 }
 
+/**
+ * @brief Matrix dot product
+ */
 CMat CMat::operator*(double f) const
 {
 #ifdef MAT_COUNT_STATISTIC
@@ -1039,6 +1177,9 @@ CMat CMat::operator*(double f) const
     return mtmp;
 }
 
+/**
+ * @brief Matrix add and assign
+ */
 CMat& CMat::operator+=(const CMat &m0)
 {
     psinsassert(row==m0.row&&clm==m0.clm);
@@ -1048,6 +1189,9 @@ CMat& CMat::operator+=(const CMat &m0)
     return *this;
 }
 
+/**
+ * @brief Matrix minus and assign
+ */
 CMat& CMat::operator-=(const CMat &m0)
 {
     psinsassert(row==m0.row&&clm==m0.clm);
@@ -1057,6 +1201,9 @@ CMat& CMat::operator-=(const CMat &m0)
     return *this;
 }
 
+/**
+ * @brief  Matrix dot product and assign
+ */
 CMat& CMat::operator*=(double f)
 {
     double *p=dd, *pEnd=&dd[rc];
@@ -1065,6 +1212,9 @@ CMat& CMat::operator*=(double f)
     return *this;
 }
 
+/**
+ * @brief Add 1.0 to matrix diagonal elements
+ */
 CMat& CMat::operator++()
 {
     int row1=row+1;
@@ -1072,6 +1222,9 @@ CMat& CMat::operator++()
     return *this;
 }
 
+/**
+ * @brief Matrix transpose
+ */
 CMat operator~(const CMat &m0)
 {
 #ifdef MAT_COUNT_STATISTIC
@@ -1080,25 +1233,43 @@ CMat operator~(const CMat &m0)
     CMat mtmp(m0.clm,m0.row);
     const double *pm=m0.dd;
     for(int i=0; i<m0.row; i++)
-    { for(int j=i; j<m0.rc; j+=m0.row) mtmp.dd[j] = *pm++; }
+        for(int j=i; j<m0.rc; j+=m0.row) 
+            mtmp.dd[j] = *pm++;
     return mtmp;
 }
 
+/**
+ * @brief Matrix symmetrization
+ */
 void symmetry(CMat &m)
 {
     psinsassert(m.row==m.clm);
     for(int i=0; i<m.clm; i++)
     {
-        double *prow=&m.dd[i*m.clm+i+1], *prowEnd=&m.dd[i*m.clm+m.clm], *pclm=&m.dd[i*m.clm+i+m.clm];
+        double *prow    = &m.dd[i*m.clm+i+1];
+        double *prowEnd = &m.dd[i*m.clm+m.clm];
+        double *pclm    = &m.dd[i*m.clm+i+m.clm];
         for(; prow<prowEnd; prow++,pclm+=m.clm)  *prow=*pclm=(*prow+*pclm)*0.5;
     }
 }
 
+/**
+ * @brief Get Matrix element
+ * @param[in] r row
+ * @param[in] c column
+ * @return the matrix element locate at (r,c)
+ */
 double& CMat::operator()(int r, int c)
 {
     return this->dd[r*this->clm+c];
 }
 
+/**
+ * @brief Set matrix specified row elements by a set of numbers
+ * @param[in] i Specified row number
+ * @param[in] f First number of the input number set
+ * @param[in] ... Rest of numbers of the input number set
+ */
 void CMat::SetRow(int i, double f, ...)
 {
     va_list vl;
@@ -1109,6 +1280,11 @@ void CMat::SetRow(int i, double f, ...)
     return;
 }
 
+/**
+ * @brief Set matrix specified row elements by a row vector
+ * @param[in] i Specified row number
+ * @param[in] v Input vector
+ */
 void CMat::SetRow(int i, const CVect &v)
 {
     psinsassert(clm==v.clm);
@@ -1117,6 +1293,12 @@ void CMat::SetRow(int i, const CVect &v)
     return;
 }
 
+/**
+ * @brief Set matrix specified column elements by a set of numbers
+ * @param[in] j Specified column number
+ * @param[in] f First number of the input number set
+ * @param[in] ... Rest of number of the input number set
+ */
 void CMat::SetClm(int j, double f, ...)
 {
     va_list vl;
@@ -1127,6 +1309,11 @@ void CMat::SetClm(int j, double f, ...)
     return;
 }
 
+/**
+ * @brief Set matrix specified column elements by a column vector
+ * @param[in] j Specified column number
+ * @param[in] v Input vector
+ */
 void CMat::SetClm(int j, const CVect &v)
 {
     psinsassert(row==v.row);
@@ -1135,6 +1322,12 @@ void CMat::SetClm(int j, const CVect &v)
     return;
 }
 
+/**
+ * @brief Set part of matrix specified column by a 3D vector
+ * @param[in] i Specified row number
+ * @param[in] j Specified column number
+ * @param[in] v Input vector
+ */
 void CMat::SetClmVect3(int i, int j, const CVect3 &v)
 {
     double *p=&dd[i*clm+j];
@@ -1143,11 +1336,23 @@ void CMat::SetClmVect3(int i, int j, const CVect3 &v)
     *p = v.k;
 }
 
+/**
+ * @brief Set part of matrix specified row by a 3D vector
+ * @param[in] i Specified row number
+ * @param[in] j Specified column number
+ * @param[in] v Input vector
+ */
 void CMat::SetRowVect3(int i, int j, const CVect3 &v)
 {
     *(CVect3*)&dd[i*clm+j] = v;
 }
 
+/**
+ * @brief Set part of matrix in diagonal by a 3D vector
+ * @param[in] i Specified row number
+ * @param[in] j Specified column number
+ * @param[in] v Input vector
+ */
 void CMat::SetDiagVect3(int i, int j, const CVect3 &v)
 {
     double *p=&dd[i*clm+j];
@@ -1156,6 +1361,12 @@ void CMat::SetDiagVect3(int i, int j, const CVect3 &v)
     *p = v.k;
 }
 
+/**
+ * @brief Set part of matrix by a 3x3 matrix
+ * @param[in] i Specified row number
+ * @param[in] j Specified column number
+ * @param[in] m Input 3x3 matrix
+ */
 void CMat::SetMat3(int i, int j, const CMat3 &m)
 {
     double *p=&dd[i*clm+j];
@@ -1164,6 +1375,12 @@ void CMat::SetMat3(int i, int j, const CMat3 &m)
     *(CVect3*)p = *(CVect3*)&m.e20;
 }
 
+/**
+ * @brief Get a 3x3 matrix from whole matrix
+ * @param[in] i Specified row number
+ * @param[in] j Specified column number
+ * @return 3x3 matrix
+ */
 CMat3 CMat::GetMat3(int i, int j) const
 {
     CMat3 m;
@@ -1174,6 +1391,12 @@ CMat3 CMat::GetMat3(int i, int j) const
     return m;
 }
 
+/**
+ * @brief Part of matrix add 3x3 matrix
+ * @param[in] i Specified row number
+ * @param[in] j Specified column number
+ * @param[in] m Input 3x3 matrix
+ */
 void CMat::SubAddMat3(int i, int j, const CMat3 &m)
 {
     double *p=&dd[i*clm+j];
@@ -1182,36 +1405,57 @@ void CMat::SubAddMat3(int i, int j, const CMat3 &m)
     *(CVect3*)p += *(CVect3*)&m.e20;
 }
 
+/**
+ * @brief Get row vector from matrix
+ * @param[in] i Specified row number
+ * @return Row vector
+ */
 CVect CMat::GetRow(int i) const
 {
     CVect v(1, clm);
-//  v.row=1; v.clm=clm;
     const double *p1=&dd[i*clm], *pEnd=p1+clm;
     for(double *p=v.dd; p1<pEnd; p++,p1++) *p = *p1;
     return v;
 }
 
+/**
+ * @brief Get column vector from matrix
+ * @param[in] Specified column number
+ * @return Column matrix 
+ */
 CVect CMat::GetClm(int j) const
 {
     CVect v(row, 1);
-//  v.row=row; v.clm=1;
     const double *p1=&dd[j], *pEnd=&dd[rc];
     for(double *p=v.dd; p1<pEnd; p++,p1+=clm) *p = *p1;
     return v;
 }
 
+/**
+ * @brief Set matrix row to 0
+ * @param[in] i Specified column number
+ */
 void CMat::ZeroRow(int i)
 {
     for(double *p=&dd[i*clm],*pEnd=p+clm; p<pEnd; p++) *p = 0.0;
     return;
 }
 
+/**
+ * @brief Set matrix column to 0
+ * @param[in] j Specified row number
+ */
 void CMat::ZeroClm(int j)
 {
     for(double *p=&dd[j],*pEnd=&dd[rc]; p<pEnd; p+=clm) *p = 0.0;
     return;
 }
 
+/**
+ * @brief Set matrix main diagonal elements by a set of number
+ * @param[in] f  First number
+ * @param[in] ... The rest of number
+ */
 void CMat::SetDiag(double f, ...)
 {
     *this = CMat(this->row, this->clm, 0.0);
@@ -1219,10 +1463,18 @@ void CMat::SetDiag(double f, ...)
     va_start(vl, f);
     double *p=dd, *pEnd=&dd[rc];
     for(int row1=row+1; p<pEnd; p+=row1)
-    { *p = f;  f = va_arg(vl, double);  }
+    { 
+        *p = f;
+        f = va_arg(vl, double);
+    }
     va_end(vl);
 }
 
+/**
+ * @brief Set Matrix main diagonal elements by Squared numbers(f^2)
+ * @param[in] f First number
+ * @param[in] ... The rest of number
+ */
 void CMat::SetDiag2(double f, ...)
 {
     *this = CMat(this->row, this->clm, 0.0);
@@ -1230,14 +1482,23 @@ void CMat::SetDiag2(double f, ...)
     va_start(vl, f);
     double *p=dd, *pEnd=&dd[rc];
     for(int row1=row+1; p<pEnd; p+=row1)
-    { *p = f*f;  f = va_arg(vl, double);    }
+    { 
+        *p = f*f; 
+        f = va_arg(vl, double);
+    }
     va_end(vl);
 }
 
-double norm1(CMat &m)
+/**
+ * @brief 1-norm of matrix, Calculate the sum of absolute number of every matrix
+ *      element
+ * @param[in] m Input matrix
+ * @return 1-norm of the matrix
+ */
+double norm1(const CMat &m)
 {
     double n1=0.0;
-    for(double *p=m.dd,*pEnd=&m.dd[m.rc]; p<pEnd; p++)
+    for(const double *p=m.dd,*pEnd=&m.dd[m.rc]; p<pEnd; p++)
     {
         if(*p>0.0)   n1 += *p;
         else  n1 -= *p;
@@ -1245,6 +1506,11 @@ double norm1(CMat &m)
     return n1;
 }
 
+/**
+ * @brief Get diagonal elements of matrix to a column vector
+ * @param[in] m Input Matrix
+ * @return Row vector consist of matrix main diagonal elements
+ */
 CVect diag(const CMat &m)
 {
     int row1 = m.row+1;
@@ -1254,11 +1520,20 @@ CVect diag(const CMat &m)
     return vtmp;
 }
 
+/**
+ * @brief  Calculate the vector(r row of matrix m0) multiply by matrix m1:
+ *      m(r,:)=m0(r,:)*m1
+ * @param[out] m Matrix result
+ * @param[in] m0 Input matrix providing row vector
+ * @param[in] m1 By matrix
+ * @param[in] r  The row of m0
+ */
 void RowMul(CMat &m, const CMat &m0, const CMat &m1, int r)
 {
     psinsassert(m0.clm==m1.row);
     int rc0=r*m0.clm;
-    double *p=&m.dd[rc0], *pEnd=p+m0.clm; const double *p0=&m0.dd[rc0], *p0End=p0+m0.clm, *p1j=m1.dd;
+    double *p=&m.dd[rc0], *pEnd=p+m0.clm;
+    const double *p0=&m0.dd[rc0], *p0End=p0+m0.clm, *p1j=m1.dd;
     for(; p<pEnd; p++)
     {
         double f=0.0; const double *p0j=p0, *p1jk=p1j++;
@@ -1267,11 +1542,20 @@ void RowMul(CMat &m, const CMat &m0, const CMat &m1, int r)
     }
 }
 
+/**
+ * @brief  Calculate the vector(r row of matrix m0) multiply by transpose of 
+ *      matrix m1: m(r,:)=m0(r,:)*m1'
+ * @param[out] m Matrix result
+ * @param[in] m0 Input matrix providing row vector
+ * @param[in] m1 By matrix
+ * @param[in] r  The row of m0
+ */
 void RowMulT(CMat &m, const CMat &m0, const CMat &m1, int r)
 {
     psinsassert(m0.clm==m1.clm);
     int rc0=r*m0.clm;
-    double *p=&m.dd[rc0], *pEnd=p+m0.clm; const double *p0=&m0.dd[rc0], *p0End=p0+m0.clm, *p1jk=m1.dd;
+    double *p=&m.dd[rc0], *pEnd=p+m0.clm;
+    const double *p0=&m0.dd[rc0], *p0End=p0+m0.clm, *p1jk=m1.dd;
     for(; p<pEnd; p++)
     {
         double f=0.0; const double *p0j=p0;
@@ -1280,6 +1564,11 @@ void RowMulT(CMat &m, const CMat &m0, const CMat &m1, int r)
     }
 }
 
+/**
+ * @brief Create main diagonal matrix by a vector
+ * @param[in] v Input vector
+ * @return Mian diagonal matrix
+ */
 CMat diag(const CVect &v)
 {
 #ifdef MAT_COUNT_STATISTIC
@@ -1288,10 +1577,16 @@ CMat diag(const CVect &v)
     int rc = v.row>v.clm ? v.row : v.clm, rc1=rc+1;
     CMat mtmp(rc,rc,0.0);
     double *p=mtmp.dd;
-    for(const double *p1=v.dd, *p1End=&v.dd[rc]; p1<p1End; p+=rc1, p1++)    *p = *p1;
+    for(const double *p1=v.dd, *p1End=&v.dd[rc]; p1<p1End; p+=rc1, p1++)
+        *p = *p1;
     return mtmp;
 }
-
+/**
+* @brief M = diag(V)*M*diag(V)*afa
+* @param[in] V Input Vector
+* @param[in] M Input Matrix
+* @param[in] afa Input factor
+*/
 void DVMDVafa(const CVect &V, CMat &M, double afa)
 {
     psinsassert(V.rc==M.row&&M.row==M.clm);
@@ -1299,7 +1594,8 @@ void DVMDVafa(const CVect &V, CMat &M, double afa)
     const double *pv = V.dd;
     for(double vi=*pv, viafa=vi*afa; i<M.clm; i++,pv++,vi=*pv,viafa=vi*afa)
     {
-        for(double *prow=&M.dd[i*M.clm],*prowEnd=prow+M.clm,*pclm=&M.dd[i]; prow<prowEnd; prow++,pclm+=M.row)
+        double *prow=&M.dd[i*M.clm],*prowEnd=prow+M.clm,*pclm=&M.dd[i];
+        for(;prow<prowEnd; prow++,pclm+=M.row)
         {
             *prow *= vi;
             *pclm *= viafa;
@@ -1312,6 +1608,11 @@ CVect::CVect(void)
 {
 }
 
+/**
+ * @brief Specified the vector Size, either row0 or clm0 is 1
+ * @param[in] row0 Number of row
+ * @param[in] clm0 Number of column
+ */
 CVect::CVect(int row0, int clm0)
 {
     if(clm0==1) { row=row0; clm=1;   }
@@ -1319,19 +1620,35 @@ CVect::CVect(int row0, int clm0)
     rc = row*clm;
  }
 
+/**
+ * @brief Initialize column vector by same number
+ * @param[in] row0 Number of row
+ * @param[in] f Specified number
+ */
 CVect::CVect(int row0, double f)
 {
     row=row0; clm=1; rc=row*clm;
     for(int i=0;i<row;i++) dd[i]=f;
 }
 
+/**
+ * @brief Initialize column vector by an array
+ * @param[in] row0  Number of row
+ * @param[in] pf    Input arrary
+ */
 CVect::CVect(int row0, const double *pf)
 {
     row=row0; clm=1; rc=row*clm;
     memcpy(dd, pf, row*sizeof(double));
 }
 
-CVect::CVect(int row0, double f, double f1, ...)
+/**
+ * @brief Initialize column vector by a set of number
+ * @param[in] row0 Number of row
+ * @param[in] f  First number
+ * @param[in] ... The rest of number
+ */
+CVect::CVect(int row0, double f, ...)
 {
     row=row0; clm=1; rc=row*clm;
     psinsassert(row<=MMD&&clm<=MMD);
@@ -1342,12 +1659,21 @@ CVect::CVect(int row0, double f, double f1, ...)
     va_end(vl);
 }
 
+/**
+ * @brief Initialize column vector by a 3D vector
+ * @param[in] v Input 3D vector
+ */
 CVect::CVect(const CVect3 &v)
 {
     row=3; clm=1; rc=row*clm;
     dd[0]=v.i; dd[1]=v.j; dd[2]=v.k;
 }
 
+/**
+ * @brief Initialize 6x1 vector by two 3D vectors
+ * @param[in] v1 First 3D vector
+ * @param[in] v2 Second 3D vector
+ */
 CVect::CVect(const CVect3 &v1, const CVect3 v2)
 {
     row=6; clm=1; rc=row*clm;
@@ -1355,6 +1681,9 @@ CVect::CVect(const CVect3 &v1, const CVect3 v2)
     dd[3]=v2.i; dd[4]=v2.j; dd[5]=v2.k;
 }
 
+/**
+ * @brief Transpose of vector
+ */
 CVect operator~(const CVect &v)
 {
     CVect vtmp=v;
@@ -1362,6 +1691,9 @@ CVect operator~(const CVect &v)
     return vtmp;
 }
 
+/**
+ * @brief Row vector multiply by matrix 
+ */
 CVect CVect::operator*(const CMat &m) const
 {
     psinsassert(clm==m.row);
@@ -1376,6 +1708,11 @@ CVect CVect::operator*(const CMat &m) const
     return vtmp;
 }
 
+/**
+ * @brief Two vector production: (1xn)*(nx1) or (nx1)*(1*n)
+ * @param[in] v Multiplied matrix
+ * @return (n*n) matrix or (1x1) matrix
+ */
 CMat CVect::operator*(const CVect &v) const
 {
 #ifdef MAT_STATISTIC
@@ -1400,6 +1737,9 @@ CMat CVect::operator*(const CVect &v) const
     return mtmp;
 }
 
+/**
+ * @brief Vector addition, adding the cooresponding elements.
+ */
 CVect CVect::operator+(const CVect &v) const
 {
     psinsassert(row==v.row&&clm==v.clm);
@@ -1409,6 +1749,9 @@ CVect CVect::operator+(const CVect &v) const
     return vtmp;
 }
 
+/**
+ * @brief Vector Substraction, Subtraction of cooresponding elements
+ */
 CVect CVect::operator-(const CVect &v) const
 {
     psinsassert(row==v.row&&clm==v.clm);
@@ -1417,7 +1760,10 @@ CVect CVect::operator-(const CVect &v) const
     for(double *p=vtmp.dd; p1<p1End; p++,p1++,p2++)  { *p=*p1-*p2; }
     return vtmp;
 }
-    
+
+/**
+ * @brief Vector dot product
+ */
 CVect CVect::operator*(double f) const
 {
     CVect vtmp(row,clm);
@@ -1426,18 +1772,31 @@ CVect CVect::operator*(double f) const
     return vtmp;
 }
 
+/**
+ * @brief Let all elements in the vector be the equal to the number f
+ * @param[in] f Input number
+ * @return Vector
+ */
 CVect& CVect::operator=(double f)
 {
     for(double *p=dd, *pEnd=&dd[rc]; p<pEnd; p++)  { *p = f; }
     return *this;
 }
 
+/**
+ * @brief Assign an array to a vector
+ * @param[in] pf Input array(lenth equal to vector)
+ * @return Vector
+ */
 CVect& CVect::operator=(const double *pf)
 {
     for(double *p=dd, *pEnd=&dd[rc]; p<pEnd; p++,pf++)  { *p = *pf; }
     return *this;
 }
 
+/**
+ * @brief Add and assign a vector
+ */
 CVect& CVect::operator+=(const CVect &v)
 {
     psinsassert(row==v.row&&clm==v.clm);
@@ -1446,6 +1805,9 @@ CVect& CVect::operator+=(const CVect &v)
     return *this;
 }
 
+/**
+ * @brief Substract and assign a vector
+ */
 CVect& CVect::operator-=(const CVect &v)
 {
     psinsassert(row==v.row&&clm==v.clm);
@@ -1454,12 +1816,21 @@ CVect& CVect::operator-=(const CVect &v)
     return *this;
 }
 
+/**
+ * @brief Vector dot product and assign
+ */
 CVect& CVect::operator*=(double f)
 {
     for(double *p=dd, *pEnd=&dd[rc]; p<pEnd; p++)  { *p *= f; }
     return *this;
 }
 
+/**
+ * @brief The power of each element in the vector
+ * @param[in] v Input vector
+ * @param[in] k Order of power
+ * @return Vector
+ */
 CVect pow(const CVect &v, int k)
 {
     CVect pp = v;
@@ -1473,6 +1844,9 @@ CVect pow(const CVect &v, int k)
     return pp;
 }
 
+/**
+ * @brief The absolute value of each element in the vector
+ */
 CVect abs(const CVect &v)
 {
     CVect res(v.row,v.clm);
@@ -1481,6 +1855,9 @@ CVect abs(const CVect &v)
     return res;
 }
 
+/**
+ * @brief 2-norm of vector(Euclidean Distance)
+ */
 double norm(const CVect &v)
 {
     const double *p=v.dd, *pEnd=&v.dd[v.rc];
@@ -1489,11 +1866,19 @@ double norm(const CVect &v)
     return sqrt(f);
 }
 
+/**
+ * @brief  Get vector element value
+ * @param[in] r Position
+ * @return Element r
+ */
 double& CVect::operator()(int r)
 {
     return this->dd[r];
 }
 
+/**
+ * @brief Set vector by a set of number
+ */
 void CVect::Set(double f, ...)
 {
     psinsassert(rc<=MMD);
@@ -1504,6 +1889,9 @@ void CVect::Set(double f, ...)
     va_end(vl);
 }
 
+/**
+ * @brief Set vector by a set of squared number
+ */
 void CVect::Set2(double f, ...)
 {
     psinsassert(rc<=MMD);
