@@ -1643,12 +1643,12 @@ CVect::CVect(int row0, const double *pf)
 }
 
 /**
- * @brief Initialize column vector by a set of number
+ * @brief Initialize column vector by a set of number(at least two)
  * @param[in] row0 Number of row
  * @param[in] f  First number
  * @param[in] ... The rest of number
  */
-CVect::CVect(int row0, double f, ...)
+CVect::CVect(int row0, double f, double f1, ...)
 {
     row=row0; clm=1; rc=row*clm;
     psinsassert(row<=MMD&&clm<=MMD);
@@ -1914,6 +1914,11 @@ CIIR::CIIR(double *b0, double *a0, int n0)
     n = n0;
 }
 
+/**
+ * @brief 
+ * @param[in] x0
+ * @return 
+ */
 double CIIR::Update(double x0)
 {
 //  a(1)*y(n) = b(1)*x(n) + b(2)*x(n-1) + ... + b(nb+1)*x(n-nb)

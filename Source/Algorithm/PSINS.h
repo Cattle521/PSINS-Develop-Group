@@ -299,7 +299,7 @@ public:
     CVect(void);
     CVect(int row0, int clm0=1);
     CVect(int row0, double f);
-    CVect(int row0, double f, ...);
+    CVect(int row0, double f, double f1, ...);
     CVect(int row0, const double *pf);
     CVect(const CVect3 &v);
     CVect(const CVect3 &v1, const CVect3 v2);
