@@ -126,6 +126,9 @@ extern const CGLV   glv;
 #define LLH(latitude,longitude,height)      CVect3((latitude)*PI/180,(longitude)*PI/180,height)
 #define PRY(pitch,roll,yaw)                 CVect3((pitch)*PI/180,(roll)*PI/180,(yaw)*PI/180)
 
+/**
+ * @brief CGLV(what does it mean?). 
+ */
 class CGLV
 {
 public:
@@ -159,6 +162,12 @@ public:
     CGLV(double Re=6378137.0, double f=(1.0/298.257), double wie0=7.2921151467e-5, double g0=9.7803267714);
 };
 
+/**
+ * @brief Three Dimension Vector representation and operations
+ * @details 3D vecotr could denote various type physical quantities, such as: 
+ *  position, velocity, euler angle, this class contain some functions 
+ *  belongs to specific physical quantities.
+ */
 class CVect3 
 {
 public:
@@ -221,6 +230,9 @@ public:
     friend CVect3 Vxyz2enu(const CVect3 &Vxyz, const CVect3 &pos);  // ECEF Vx/Vy/Vz to Ve/Vn/Vu
 };
 
+/**
+ * @brief Quaternion representation and operations
+ */
 class CQuat
 {
 public:
@@ -243,6 +255,11 @@ public:
     friend CQuat UpDown(const CQuat &q);        // Up-Down the quaternion
 };
 
+/**
+ * @brief Three Dimension matrix representation and operations
+ * @details 3D matrix could denote directional cosine matrix(DCM), os the class
+ *  contains some function about attitude transform.
+ */
 class CMat3 
 {
 public:
@@ -270,6 +287,9 @@ public:
     friend CMat3  q2mat(const CQuat &qnb);                  // quaternion to DCM
 };
 
+/**
+ * @brief Multidimensional vector representation and operations
+ */
 class CVect
 {
 public:
@@ -303,6 +323,9 @@ public:
     friend CVect pow(const CVect &v, int k=2);  // power
 };
 
+/**
+* @brief Multidimensional matrix representation and operations
+*/
 class CMat
 {
 public:
