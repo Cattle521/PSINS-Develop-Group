@@ -2108,6 +2108,11 @@ BOOL CVARn::Update(double f, ...)
 }
 
 /***************************  class CKalman  *********************************/
+/**
+ * @brief 
+ * @param nq0
+ * @param nr0
+ */
 CKalman::CKalman(int nq0, int nr0)
 {
     psinsassert(nq0<=MMD&&nr0<=MMD);
@@ -2177,15 +2182,32 @@ int CKalman::MeasUpdate(double fading)
     return measflag;
 }
 
+/**
+ * @brief Measurement noise adaptive(Sage-Husa adaptive filter)
+ * @param[in] i 
+ * @param[in] r 
+ * @param[in] Pr
+ * @return 
+ *      @retval 0
+ *      @retval 1
+ */
 int CKalman::RAdaptive(int i, double r, double Pr)
 {
     double rr=r*r-Pr;
     if(rr<Rmin.dd[i])   rr = Rmin.dd[i];
 //  if(rr>Rmax.dd[i])   Rt.dd[i] = Rmax.dd[i];  
 //  else                Rt.dd[i] = (1.0-Rbeta.dd[i])*Rt.dd[i]+Rbeta.dd[i]*rr;
-    if(rr>Rmax.dd[i])   { Rt.dd[i]=Rmax.dd[i]; Rmaxcount[i]++; }  
-    else                { Rt.dd[i]=(1.0-Rbeta.dd[i])*Rt.dd[i]+Rbeta.dd[i]*rr; Rmaxcount[i]=0; }
-    Rbeta.dd[i] = Rbeta.dd[i]/(Rbeta.dd[i]+Rb.dd[i]);   // beta = beta / (beta+b)
+    if(rr>Rmax.dd[i])   
+    { 
+        Rt.dd[i] = Rmax.dd[i];
+        Rmaxcount[i]++; 
+    }
+    else
+    {
+        Rt.dd[i] = (1.0-Rbeta.dd[i])*Rt.dd[i]+Rbeta.dd[i]*rr; 
+        Rmaxcount[i] = 0; 
+    }
+    Rbeta.dd[i] = Rbeta.dd[i]/(Rbeta.dd[i]+Rb.dd[i]);  // beta = beta / (beta+b)
     int adptOK = (Rmaxcount[i]==0||Rmaxcount[i]>Rmaxcount0[i]) ? 1: 0;
     return adptOK;
 }
@@ -3005,7 +3027,10 @@ void CFileRdWt::Init(const char *fname0, int columns0)
     else if(columns>0)          // txt file read
     {
         f = fopen(fname, "rt");
-        if(!f) return;
+        if(!f){
+            LOG(WARNING)<<"file "<<fname<<" do NOT exist";
+            return;
+        }
         fpos_t pos;
         while(1)  // skip txt-file comments
         {
@@ -3026,9 +3051,15 @@ void CFileRdWt::Init(const char *fname0, int columns0)
             if(!allSpace && allDigital) break;
         }
         fsetpos(f, &pos);
-        this->columns = columns;
+        // this->columns = columns;
         for(int i=0; i<columns; i++)
-        { sstr[4*i+0]='%', sstr[4*i+1]='l', sstr[4*i+2]='f', sstr[4*i+3]=' ', sstr[4*i+4]='\0'; } 
+        { 
+            sstr[4*i+0]='%'; 
+            sstr[4*i+1]='l'; 
+            sstr[4*i+2]='f';
+            sstr[4*i+3]=' ';
+            sstr[4*i+4]='\0';
+        } 
     }
     else
     {
@@ -3037,6 +3068,14 @@ void CFileRdWt::Init(const char *fname0, int columns0)
     linelen = 0;
 }
 
+/**
+ * @brief Parse  
+ * @param[in] lines 
+ * @param[in] txtDelComma
+ * @return 
+ *      @retval 0 
+ *      @retval 1
+ */
 int CFileRdWt::load(int lines, BOOL txtDelComma)
 {
     if(columns<0)           // bin file read
@@ -3048,30 +3087,35 @@ int CFileRdWt::load(int lines, BOOL txtDelComma)
     else                    // txt file read
     {
         for(int i=0; i<lines; i++)  fgets(line, sizeof(line), f);
+        // replace other Separator with ' '
         if(txtDelComma)
         {
             for(char *pc=line, *pend=line+sizeof(line); pc<pend; pc++)
             {
-                if(*pc==','||*pc==';'||*pc==':'||*pc=='\t:') *pc=' ';
+                if(*pc==','||*pc==';'||*pc==':'||*pc=='\t') *pc=' ';
                 else if(*pc=='\0') break;
             }
         }
         if(columns<10)
             sscanf(line, sstr,
-                &buff[ 0], &buff[ 1], &buff[ 2], &buff[ 3], &buff[ 4], &buff[ 5], &buff[ 6], &buff[ 7], &buff[ 8], &buff[ 9]
-                ); 
+                &buff[ 0], &buff[ 1], &buff[ 2], &buff[ 3], &buff[ 4],
+                &buff[ 5], &buff[ 6], &buff[ 7], &buff[ 8], &buff[ 9] ); 
         else if(columns<20)
             sscanf(line, sstr,
-                &buff[ 0], &buff[ 1], &buff[ 2], &buff[ 3], &buff[ 4], &buff[ 5], &buff[ 6], &buff[ 7], &buff[ 8], &buff[ 9],
-                &buff[10], &buff[11], &buff[12], &buff[13], &buff[14], &buff[15], &buff[16], &buff[17], &buff[18], &buff[19]
-                ); 
+                &buff[ 0], &buff[ 1], &buff[ 2], &buff[ 3], &buff[ 4],
+                &buff[ 5], &buff[ 6], &buff[ 7], &buff[ 8], &buff[ 9],
+                &buff[10], &buff[11], &buff[12], &buff[13], &buff[14],
+                &buff[15], &buff[16], &buff[17], &buff[18], &buff[19] ); 
         else if(columns<40)
             sscanf(line, sstr,
-                &buff[ 0], &buff[ 1], &buff[ 2], &buff[ 3], &buff[ 4], &buff[ 5], &buff[ 6], &buff[ 7], &buff[ 8], &buff[ 9],
-                &buff[10], &buff[11], &buff[12], &buff[13], &buff[14], &buff[15], &buff[16], &buff[17], &buff[18], &buff[19],
-                &buff[20], &buff[21], &buff[22], &buff[23], &buff[24], &buff[25], &buff[26], &buff[27], &buff[28], &buff[29],
-                &buff[30], &buff[31], &buff[32], &buff[33], &buff[34], &buff[35], &buff[36], &buff[37], &buff[38], &buff[39]
-                ); 
+                &buff[ 0], &buff[ 1], &buff[ 2], &buff[ 3], &buff[ 4],
+                &buff[ 5], &buff[ 6], &buff[ 7], &buff[ 8], &buff[ 9],
+                &buff[10], &buff[11], &buff[12], &buff[13], &buff[14],
+                &buff[15], &buff[16], &buff[17], &buff[18], &buff[19],
+                &buff[20], &buff[21], &buff[22], &buff[23], &buff[24],
+                &buff[25], &buff[26], &buff[27], &buff[28], &buff[29],
+                &buff[30], &buff[31], &buff[32], &buff[33], &buff[34],
+                &buff[35], &buff[36], &buff[37], &buff[38], &buff[39] ); 
     }
     linelen += lines;
     if(feof(f))  return 0;

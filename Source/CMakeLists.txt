@@ -28,5 +28,6 @@ SET(LIBRARY_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin)
 INCLUDE_DIRECTORIES(Algorithm)
 
 # Add subdirectory contain "CMakesLists.txt"
-ADD_SUBDIRECTORY(demo)
+# ADD_SUBDIRECTORY(demo)
+ADD_SUBDIRECTORY(demo1)
 ADD_SUBDIRECTORY(Algorithm)

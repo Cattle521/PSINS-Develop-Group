@@ -1,8 +1,10 @@
-/* PSINS(Precise Strapdown Inertial Navigation System) C++ alogrithm hearder file PSINS.h */
-/*
-    Copyright(c) 2015-2018, by Gongmin Yan, All rights reserved.
-    Northwestern Polytechnical University, Xi'an, P.R.China
-    Date: 17/02/2015, 19/07/2017, 11/12/2018
+/* Copyright(c) 2015-2018, by Gongmin Yan, All rights reserved. */
+/**
+* @file PSINS.h
+* @brief PSINS(Precise Strapdown Inertial Navigation System) C++ alogrithm hearder file
+* @author Gongmin Yan(Northwestern Polytechnical University, Xi'an, P.R.China)
+* @version 1.0
+* @date 17/02/2015, 19/07/2017, 11/12/2018
 */
 
 #ifndef _PSINS_H
@@ -15,6 +17,7 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <time.h>
+#include <glog/logging.h>
 
 /************** compile control !!! ***************/
 //#define MAT_COUNT_STATISTIC
@@ -524,12 +527,36 @@ public:
 class CKalman
 {
 public:
-    double kftk, zfdafa;
-    int nq, nr, measflag;
-    CMat Ft, Pk, Hk, Fading;
-    CVect Xk, Zk, Qt, Rt, rts, Xmax, Pmax, Pmin, Zfd, Zfd0,
-        Rmax, Rmin, Rbeta, Rb,              // measurement noise R adaptive
-        FBTau, FBMax, FBXk, FBTotal;        // feedback control
+    double kftk;    ///< Kalman update time interval
+    double zfdafa;  ///<
+    int nq;         ///< Number of states
+    int nr;         ///< Number of observations
+    int measflag;   ///< 
+    CMat Ft;        ///< System matrix in continuous system: x_dot = Ft * x
+    CMat Pk;        ///< State's variance-covariance matrix at moment k
+    CMat Hk;        ///< Measurement matrix
+    CMat Fading;    ///< 
+    CVect Xk;       ///< State vector
+    CVect Zk;       ///< Observation vector
+    CVect Qt;       ///< Main diagonal vector of system noise matrix
+    CVect Rt;       ///< Observation noise vector
+    CVect rts;      ///<
+
+    CVect Xmax;
+    CVect Pmax;
+    CVect Pmin;
+    CVect Zfd; 
+    CVect Zfd0;
+
+    CVect Rmax;     ///< 
+    CVect Rmin;     ///< 
+    CVect Rbeta;    ///< 
+    CVect Rb;              // measurement noise R adaptive
+
+    CVect FBTau;
+    CVect FBMax;
+    CVect FBXk;
+    CVect FBTotal;        // feedback control
     int Rmaxcount[MMD], Rmaxcount0[MMD];
 //  CRAvar Ravar;
 
@@ -541,7 +568,7 @@ public:
     virtual void Feedback(double fbts);         // feed back
     void TimeUpdate(double kfts, int fback=1);  // time update
     int MeasUpdate(double fading=1.0);          // measurement update
-    int RAdaptive(int i, double r, double Pr); // Rt adaptive
+    int RAdaptive(int i, double r, double Pr);  // Rt adaptive
     void RPkFading(int i);                      // multiple fading
     void SetMeasFlag(int flag);                 // measurement flag setting
     void XPConstrain(void);                     // Xk & Pk constrain: -Xmax<Xk<Xmax, Pmin<diag(Pk)<Pmax
@@ -623,15 +650,22 @@ public:
 
 #ifdef PSINS_IO_FILE
 
+/**
+ * @brief File read and write operations
+ */
 class CFileRdWt
 {
-    static char dirIn[256], dirOut[256];
+    static char dirIn[256];     ///< Input file direcotry
+    static char dirOut[256];    ///< Output file direcotry
 public:
-    FILE *f;
-    char fname[256], line[512], sstr[64*4];
-    double buff[64];
-    float buff32[64];
-    int columns, linelen;
+    FILE *f;            ///< file pointer
+    char fname[256];    ///< file name
+    char line[512];     ///< a line content of current file
+    char sstr[64*4];    ///< string format
+    double buff[64];    ///< data in one line(double)
+    float buff32[64];   ///< data in one line(float)
+    int columns;        ///< number of data columns, when read binary, columns<0
+    int linelen;        ///< lenth of line
 
     static void Dir(const char *dirI, const char *dirO=(const char*)NULL);
     CFileRdWt(void);
