@@ -97,7 +97,7 @@ void CKFApp::SetMeasOD(double dSod, double ts)
 }
 
 /**
- * @brief 
+ * @brief Set Measurement: velocity
  */
 void CKFApp::SetMeasVG(void)
 {
@@ -116,6 +116,14 @@ void CKFApp::SetMeasYaw(double ymag)
         }
 }
 
+/**
+ * @brief 
+ * @param[in] pwm
+ * @param[in] pvm
+ * @param[in] nn
+ * @param[in] ts
+ * @return 
+ */
 int CKFApp::Update(const CVect3 *pwm, const CVect3 *pvm, int nn, double ts)
 {
     int res=TDUpdate(pwm, pvm, nn, ts, 5);  

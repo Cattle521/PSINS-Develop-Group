@@ -15,9 +15,9 @@
 /**
  * @brief Define 
  */
-struct SSensor 
+struct SSensor
 { 
-    double t; 
+    double t;
     CVect3 Acc, Gyro, MtiAtt; 
 } *ps;
 
@@ -26,10 +26,10 @@ struct SSensor
  */
 void convert(void)
 {
-    ps->t      *= 0.01;         /// 100Hz
-    ps->Gyro   *= glv.dps*Ts;
-    ps->Acc    *= Ts;
-    ps->MtiAtt *= DEG;
+    ps->t      *= 0.01;         ///< 100Hz
+    ps->Gyro   *= glv.dps*Ts;   // Convert angle rate to angular increment
+    ps->Acc    *= Ts;           // Convert acceleration to velocity increment
+    ps->MtiAtt *= DEG;          // Convert degree to radians
     ps->MtiAtt = CVect3(ps->MtiAtt.i, ps->MtiAtt.j, C360toCC180(ps->MtiAtt.k));
 }
 
@@ -55,8 +55,7 @@ int main(int argc, char* argv[])
 
     for(int i=0; i<10000*FRQ; i+=1)
     {
-        if(!fin.load()) break;  convert();
-        kf.SetMeasVG();
+        if(!fin.load()) break;  convert(); kf.SetMeasVG();
         kf.Update(&ps->Gyro, &ps->Acc, 1, Ts);
         if(i%5==0)
         {
