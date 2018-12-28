@@ -401,7 +401,7 @@ public:
 };
 
 /**
- * @brief 
+ * @brief Provide variables about Earth
  */
 class CEarth
 {
