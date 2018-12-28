@@ -1,5 +1,10 @@
 /**
- * @brief Multidimensional vector representation and operations
+ * @file MathBase.h
+ * @brief 1. Vector and matrix operations 2. Earth and Gravity definition 3. Constant 
+ *      definition
+ * @author Yan GongMing, yinflying
+ * @version 1.0
+ * @date 2018-12-27
  */
 
 #ifndef _MATHBATH_H
@@ -16,7 +21,6 @@
 #define MMD     20
 #define MMD2    (MMD*MMD)
 
-// type re-define
 #ifndef BOOL
 typedef int     BOOL;
 #endif
@@ -160,19 +164,19 @@ public:
     friend CVect3 sqrt(const CVect3 &v);                    // sqrt
     friend CVect3 pow(const CVect3 &v, int k);              // power
     friend double dot(const CVect3 &v1, const CVect3 &v2);  // vector dot multiplication
-    friend CMat3 a2mat(const CVect3 &att);                  // Euler angles to DCM 
+    friend CMat3  a2mat(const CVect3 &att);                  // Euler angles to DCM 
     friend CVect3 m2att(const CMat3 &Cnb);                  // DCM to Euler angles
     friend CQuat  a2qua(double pitch, double roll, double yaw);  // Euler angles to quaternion
     friend CQuat  a2qua(const CVect3 &att);                  // Euler angles to quaternion
     friend CVect3 q2att(const CQuat &qnb);                  // quaternion to Euler angles 
-    friend CQuat rv2q(const CVect3 &rv);                    // rotation vector to quaternion
+    friend CQuat  rv2q(const CVect3 &rv);                    // rotation vector to quaternion
     friend CVect3 q2rv(const CQuat &q);                     // quaternion to rotation vector
-    friend CMat3 askew(const CVect3 &v);                    // askew matrix;
-    friend CMat3 pos2Cen(const CVect3 &pos);                // to geographical position matrix
+    friend CMat3  askew(const CVect3 &v);                    // askew matrix;
+    friend CMat3  pos2Cen(const CVect3 &pos);                // to geographical position matrix
     friend CVect3 pp2vn(const CVect3 &pos1, const CVect3 &pos0, double ts,
             CEarth *pEth);                                  // position difference to velocity
     friend CVect3 MKQt(const CVect3 &sR, const CVect3 &tau);// first order Markov white-noise variance calculation
-    friend CMat3 dv2att(const CVect3 &va1, const CVect3 &va2, CVect3 &vb1,
+    friend CMat3  dv2att(const CVect3 &va1, const CVect3 &va2, CVect3 &vb1,
             const CVect3 &vb2);                              // attitude determination using double-vector
     friend CVect3 Alignsb(CVect3 wmm, CVect3 vmm, double latitude);  // align in static-base
     friend double MagYaw(const CVect3 &mag, const CVect3 &att,
@@ -187,7 +191,7 @@ CVect  abs(const CVect &v);           // vector abs
 double norm(const CVect &v);          // vector norm
 CVect  pow(const CVect &v, int k);    // power
 /**
- * @brief
+ * @brief Multidimensional vector representation and operations
  */
 class CVect
 {
@@ -255,13 +259,14 @@ public:
 CMat3 operator-(const CMat3 &m);                 // minus
 CMat3 operator~(const CMat3 &m);                 // matrix transposition
 CMat3 operator*(double f, const CMat3 &m);       // scale multiply matrix
-double det(const CMat3 &m);                      // matrix determination
-CMat3 inv(const CMat3 &m);                       // matrix inverse
-CVect3 diag(const CMat3 &m);                     // diagonal of a matrix
-CMat3 diag(const CVect3 &v);                     // diagonal matrix
-CQuat  m2qua(const CMat3 &Cnb);                  // DCM to quaternion
-CMat3  q2mat(const CQuat &qnb);                  // quaternion to DCM
-/**
+double  det(const CMat3 &m);                     // matrix determination
+CMat3   inv(const CMat3 &m);                     // matrix inverse
+CVect3  diag(const CMat3 &m);                    // diagonal of a matrix
+CMat3   diag(const CVect3 &v);                   // diagonal matrix
+CQuat   m2qua(const CMat3 &Cnb);                 // DCM to quaternion
+CMat3   q2mat(const CQuat &qnb);                 // quaternion to DCM
+
+/*
  * @brief Three Dimension matrix representation and operations
  * @details 3D matrix could denote directional cosine matrix(DCM), os the class
  *  contains some function about attitude transform.
@@ -395,22 +400,51 @@ public:
     CGLV(double Re=6378137.0, double f=(1.0/298.257), double wie0=7.2921151467e-5, double g0=9.7803267714);
 };
 
+/**
+ * @brief 
+ */
 class CEarth
 {
 public:
-    double a, b;
-    double f, e, e2;
-    double wie;
+    double a;       ///< Equatorial radius
+    double b;       ///< Polar radius
+    double f;       ///< Flattening 
+    double e;       ///< Eccentricity
+    double e2;      ///< Square of eccentricity
+    double wie;     ///< Rotational angular velocity
+    double g0;      ///< gravity force
 
-    double sl, sl2, sl4, cl, tl, RMh, RNh, clRNh, f_RMh, f_RNh, f_clRNh;
-    CVect3 pos, vn, wnie, wnen, wnin, gn, gcc, *pgn;
+    double sl;      ///< sin(lat)
+    double sl2;     ///< (sin(lat))^2
+    double sl4;     ///< (sin(lat))^4
+    double cl;      ///< cos(lat)
+    double tl;      ///< tan(lat)
+    double RMh;     ///< Meridian radius of curvature
+    double RNh;     ///< Prime vertial radius of curvature
+    double clRNh;   ///< cos(lat) * RNh
+    double f_RMh;   ///< 1/RMh
+    double f_RNh;   ///< 1/RNh
+    double f_clRNh; ///< 1/(cos(lat)*RNh)
 
-    CEarth(double a0=glv.Re, double f0=glv.f, double g0=glv.g0);
+    CVect3 pos;     ///< Position in geodetic coordinate
+    CVect3 vn;      ///< Velocity (n-frame to e-frame project in n-frame)
+    CVect3 wnie;    ///< w_ie^n, rotation e-frame to i-frame project in n-frame
+    CVect3 wnen;    ///< w_en^n, rotation n-frame to e-frame project in n-frame
+    CVect3 wnin;    ///< w_in^n, rotation n-frame to i-frame project in n-frame
+    CVect3 gn;      ///< g^n, gravity on the surface of earth(Simple gravity field model)
+    CVect3 gcc;     ///< Unwanted acceleration under n-frame(a_en^n = f_ib^n - gcc)
+    CVect3 *pgn;    ///< g^n, if setting value, gcc vill use it.
+
+    CEarth(double a0=glv.Re, double f0=glv.f, double wie=glv.wie,
+            double g0=glv.g0);
     void Update(const CVect3 &pos, const CVect3 &vn=O31);
     CVect3 vn2dpos(const CVect3 &vn, double ts=1.0) const;
 };
 
-class CEGM  // Earth Gravitational Model 
+/**
+ * @brief Earth Gravitational Model(Unfinished)
+ */
+class CEGM
 {
 public:
     CEGM(void);

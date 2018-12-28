@@ -1,3 +1,11 @@
+/**
+ * @file MathBase.cpp
+ * @brief 1. Vector and matrix operations 2. Earth and Gravity definition 3. Constant 
+ *      definition
+ * @author Yan GongMing, yinflying
+ * @version 1.0
+ * @date 2018-12-27
+ */
 #include "MathBase.h"
 
 const CVect3 I31(1.0), O31(0.0), Ipos(1.0/RE,1.0/RE,1.0);
@@ -6,7 +14,14 @@ const CMat3  I33(1,0,0, 0,1,0, 0,0,1), O33(0,0,0, 0,0,0, 0,0,0);
 const CVect  On1(MMD,0.0), O1n=~On1;
 CGLV glv;
 
-
+/**
+ * @brief Initialize the global constant
+ * @param[in] Re    Earth equatorial radius(m), default: 6378137.0
+ * @param[in] f     Earth oblateness, default: 1.0/298.257
+ * @param[in] wie0  Earth average rate of rotation angle(rad/s), 
+ *                  default:7.2921151467e-5
+ * @param[in] g0    Earth gravity acceleration(m^2/s), default: 9.7803267714
+ */
 CGLV::CGLV(double Re, double f, double wie0, double g0)
 {
     this->Re = Re; this->f = f; this->wie = wie0; this->g0 = g0;
@@ -1896,15 +1911,29 @@ void CVect::Set2(double f, ...)
 }
 
 /***************************  class CEarth  *********************************/
-CEarth::CEarth(double a0, double f0, double g0)
+/**
+ * @brief Initialize CEarth class
+ * @param[in] a0 Earth equatorial radius
+ * @param[in] f0 Earth flattening
+ * @param[in] wie Earth rotational angular velocity 
+ * @param[in] g0 Earth gravity magnitude
+ */
+CEarth::CEarth(double a0, double f0, double wie, double g0)
 {
-    a = a0; f = f0; wie = glv.wie; 
+    a = a0; f = f0; 
+    this->wie = wie; 
+    this->g0 = g0;
     b = (1-f)*a;
     e = sqrt(a*a-b*b)/a;    e2 = e*e;
     gn = O31;  pgn = 0;
     Update(O31);
 }
 
+/**
+ * @brief Update mamber variables
+ * @param[in] pos Geodetic coordinate postion
+ * @param[in] vn  Velocity: v_en^n(n-frame to e-frame project in n-frame)
+ */
 void CEarth::Update(const CVect3 &pos, const CVect3 &vn)
 {
 #ifdef PSINS_LOW_GRADE_MEMS
@@ -1917,7 +1946,7 @@ void CEarth::Update(const CVect3 &pos, const CVect3 &vn)
 //  wnen.i = -vn.j*f_RMh,   wnen.j = vn.i*f_RNh,    wnen.k = wnen.j*tl;
     wnin = wnie = wnen = O31;
     sl2 = sl*sl;
-    gn.k = -( glv.g0*(1+5.27094e-3*sl2)-3.086e-6*pos.k );
+    gn.k = -( g0*(1+5.27094e-3*sl2)-3.086e-6*pos.k );
     gcc = pgn ? *pgn : gn;
 #else
     this->pos = pos;  this->vn = vn;
@@ -1925,26 +1954,36 @@ void CEarth::Update(const CVect3 &pos, const CVect3 &vn)
     double sq = 1-e2*sl*sl, sq2 = sqrt(sq);
     RMh = a*(1-e2)/sq/sq2+pos.k;    f_RMh = 1.0/RMh;
     RNh = a/sq2+pos.k;    clRNh = cl*RNh;  f_RNh = 1.0/RNh; f_clRNh = 1.0/clRNh;
+    // ref Yan2016(P70,4.1-3)
     wnie.i = 0.0,           wnie.j = wie*cl,        wnie.k = wie*sl;
+    // ref Yan2016(P70,4.1-4)
     wnen.i = -vn.j*f_RMh,   wnen.j = vn.i*f_RNh,    wnen.k = wnen.j*tl;
     wnin = wnie + wnen;
     sl2 = sl*sl, sl4 = sl2*sl2;
-    gn.k = -( glv.g0*(1+5.27094e-3*sl2+2.32718e-5*sl4)-3.086e-6*pos.k );
+    // ref Yan2016(P49,3.2-23)
+    gn.k = -( g0*(1+5.27094e-3*sl2+2.32718e-5*sl4)-3.086e-6*pos.k );
     gcc = pgn ? *pgn : gn;
+    // ref Yan2016(P71,4.1-20)
     gcc -= (wnie+wnin)*vn;
 #endif
 }
 
+/**
+ * @brief Calculate position change in a short time
+ * @param[in] vn Velocity under n-frame
+ * @param[in] ts Time span(sec)
+ * @return Position Change under n-frame
+ */
 CVect3 CEarth::vn2dpos(const CVect3 &vn, double ts) const
 {
     return CVect3(vn.j*f_RMh, vn.i*f_clRNh, vn.k)*ts;
 }
 
 /**
- * @brief 
- * @param[in] y
- * @param[in] x
- * @return 
+ * @brief The same as atan2, ref: https://en.wikipedia.org/wiki/Atan2
+ * @param[in] y Input y
+ * @param[in] x Input x
+ * @return arctan(y/x)
  */
 double atan2Ex(double y, double x)
 {
