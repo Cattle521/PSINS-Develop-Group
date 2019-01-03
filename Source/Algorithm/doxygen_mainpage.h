@@ -7,4 +7,10 @@
  * \section usage   Usage
  * Here is usage
  * \section default Default interpretation
+ * \section Doxygen Using Example
+ * you can use LATEX here:
+ * \f$ \lambda = \alpha \f$
+ * \f[ 
+ *      \lambda = \frac{a}{b}
+ * \f]
  */

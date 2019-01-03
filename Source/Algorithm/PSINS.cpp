@@ -12,7 +12,7 @@ CIIR::CIIR(void){}
 
 CIIR::CIIR(double *b0, double *a0, int n0)
 {
-    psinsassert(n0<IIRnMax);
+    assert(n0<IIRnMax);
     for(int i=0; i<n0; i++)  { b[i]=b0[i]/a0[0]; a[i]=a0[i]; x[i]=y[i]=0.0; }
     n = n0;
 }
@@ -65,7 +65,7 @@ CRAvar::CRAvar()
 
 CRAvar::CRAvar(int nR0, int maxCount0)
 {
-    psinsassert(nR0<RAMAX);
+    assert(nR0<RAMAX);
     this->nR0 = nR0;
     for(int i=0; i<RAMAX; i++)  { Rmaxcount[i]=maxCount0, tau[i]=INF; }
 }
@@ -218,7 +218,7 @@ BOOL CVARn::Update(double f, ...)
  */
 CKalman::CKalman(int nq0, int nr0)
 {
-    psinsassert(nq0<=MMD&&nr0<=MMD);
+    assert(nq0<=MMD&&nr0<=MMD);
     kftk = 0.0;
     nq = nq0; nr = nr0;
     Ft = Pk = CMat(nq,nq,0.0);
@@ -714,45 +714,88 @@ void CSINSGPSOD::SetMeasYaw(double ymag)
 }
 
 /***************************  class CIMU  *********************************/
+/**
+ * @brief 
+ */
 CIMU::CIMU(void)
 {
     nSamples = prefirst = 1;
     phim = dvbm = wm_1 = vm_1 = O31;
 }
 
+/**
+ * @brief Update IMU observations using Multi-subsample algorithm
+ * @details When nSamples == 1, onePlusPre is true, IMU will update 
+ *      using one-plus-previous sample, onePlusPre is false, IMU will update 
+ *      without compensation.
+ * @param[in] pwm       Attitude increment(Gryo measurements)
+ * @param[in] pvm       Velocity increment(Accelerometer measurements)
+ * @param[in] nSamples  Number of subsample(
+ *                       1:One-plus-previous sample or without compensation
+ *                       >1: Muti-subsample,max subsample is 5)
+ */
 void CIMU::Update(const CVect3 *pwm, const CVect3 *pvm, int nSamples)
 {
-    static double conefactors[5][4] = {             // coning coefficients
-        {2./3},                                     // 2
-        {9./20, 27./20},                            // 3
-        {54./105, 92./105, 214./105},               // 4
-        {250./504, 525./504, 650./504, 1375./504}   // 5
-        };
-    int i;
-    double *pcf = conefactors[nSamples-2];
-    CVect3 cm(0.0), sm(0.0), wmm(0.0), vmm(0.0);
-
     this->nSamples = nSamples;
-    if(nSamples==1)  // one-plus-previous sample
-    {
-        if(prefirst==1) {wm_1=pwm[0]; vm_1=pvm[0]; prefirst=0;}
-        cm = 1.0/12*wm_1; wm_1=pwm[0]; 
-        sm = 1.0/12*vm_1; vm_1=pvm[0];
+    // Single Sample without compensation
+    if(1 == nSamples && !this->onePlusPre)
+    { 
+        this->phim = pwm[0]; this->dvbm = pvm[0];
+        return;
     }
-    if(nSamples>1) prefirst=1;
-    for(i=0; i<nSamples-1; i++)
+    // One-plus-previous sample, ref Yan2016(P31:2.5-37)
+    if(1 == nSamples && this->onePlusPre)
     {
-        cm += pcf[i]*pwm[i];
-        sm += pcf[i]*pvm[i];
+        if(prefirst==1) 
+        {
+            this->wm_1=pwm[0]; this->vm_1=pvm[0]; 
+            prefirst=0;
+        }
+        CVect3 cm = 1.0/12*wm_1;  CVect3 sm = 1.0/12*vm_1; 
+        // ref Yan2016(P31:2.5-37)
+        phim = pwm[0] + cm*pwm[0];
+        // ref Yan2016(P73:4.1-36,P76:4.1-55)
+        dvbm = pvm[0] + 1.0/2*pwm[0]*pvm[0] + (cm*pvm[0]+sm*pwm[0]);
+        this->wm_1=pwm[0]; this->vm_1=pvm[0];
+        return;
+    }
+    // Multi-subsample coning compensation
+    if(nSamples > 1 && nSamples <= 5)
+    {
+        this->prefirst = 1;
+        // coning error confficients, ref Yan2016(P38:table 2.5-2)
+        static double conefactors[5][4] = {
+            {2./3},                                     // 2
+            {9./20, 27./20},                            // 3
+            {54./105, 92./105, 214./105},               // 4
+            {250./504, 525./504, 650./504, 1375./504}   // 5
+            };
+        double *pcf = conefactors[nSamples-2];
+        CVect3 cm(0.0), sm(0.0), wmm(0.0), vmm(0.0);
+        int i = 0;
+        for(; i<nSamples-1; i++)
+        {
+            cm += pcf[i]*pwm[i];
+            sm += pcf[i]*pvm[i];
+            wmm += pwm[i];
+            vmm += pvm[i];
+        }
         wmm += pwm[i];
         vmm += pvm[i];
+        phim = wmm + cm*pwm[i];
+        dvbm = vmm + 1.0/2*wmm*vmm + (cm*pvm[i]+sm*pwm[i]);
+        return;
     }
-    wmm += pwm[i];
-    vmm += pvm[i];
-    phim = wmm + cm*pwm[i];
-    dvbm = vmm + 1.0/2*wmm*vmm + (cm*pvm[i]+sm*pwm[i]);
+    LOG(ERROR)<<"CMU:Update: nSamples out of range [0-5]: "<<nSamples;
 }
 
+/**
+ * @brief Convert differnt IMU coordinate to Right-Forward-Up('RFU')
+ * @param[in,out] pwm  Input and Output gyro or Accelerometer Measurements
+ * @param[in] nSamples Number of the input measurements
+ * @param[in] str      Input measurement coordinate type, three chars,e.g. 'RBF'
+ *          (R:right, L:left, F:forward, B:back, U:up, D: Down)
+ */
 void IMURFU(CVect3 *pwm, int nSamples, const char *str)
 {
     for(int n=0; n<nSamples; n++)
@@ -763,18 +806,26 @@ void IMURFU(CVect3 *pwm, int nSamples, const char *str)
         {
             switch(str[i])
             {
-            case 'R':  tmpwm.i= *pw;  break;
-            case 'L':  tmpwm.i=-*pw;  break;
-            case 'F':  tmpwm.j= *pw;  break;
-            case 'B':  tmpwm.j=-*pw;  break;
-            case 'U':  tmpwm.k= *pw;  break;
-            case 'D':  tmpwm.k=-*pw;  break;
+            case 'R':  tmpwm.i = *pw;  break;
+            case 'L':  tmpwm.i = -*pw; break;
+            case 'F':  tmpwm.j = *pw;  break;
+            case 'B':  tmpwm.j = -*pw; break;
+            case 'U':  tmpwm.k = *pw;  break;
+            case 'D':  tmpwm.k = -*pw; break;
             }
         }
         pwm[n] = tmpwm;
     }
 }
 
+/**
+ * @brief Convert differnt IMU coordinate to Right-Forward-Up('RFU')
+ * @param[in,out] pwm Input and Output gyro Measurements
+ * @param[in,out] pvm Input and Output Accelerometer Measurements
+ * @param[in] nSamples Number of input measurements
+ * @param[in] str      Input measurement coordinate type, three chars,e.g. 'RBF'
+ *          (R:right, L:left, F:forward, B:back, U:up, D: Down)
+ */
 void IMURFU(CVect3 *pwm, CVect3 *pvm, int nSamples, const char *str)
 {
     IMURFU(pwm, nSamples, str);
@@ -782,10 +833,18 @@ void IMURFU(CVect3 *pwm, CVect3 *pvm, int nSamples, const char *str)
 }
 
 /***************************  class CSINS  *********************************/
+/**
+ * @brief Initialize attitude, velocity and position
+ * @param[in] qnb0  Initial attitude
+ * @param[in] vn0   Initial velocity 
+ * @param[in] pos0  Initial position
+ * @param[in] tk0   Initial time(sec)
+ */
 CSINS::CSINS(const CQuat &qnb0, const CVect3 &vn0, const CVect3 &pos0, double tk0)
 {
     tk = tk0;  ts = nts = 1.0;
-    velMax = 400.0; hgtMin = -RE*0.01, hgtMax = -hgtMin;
+    velMax = 400.0; 
+    this->hgtMin = -glv.Re * 0.01; hgtMax = -hgtMin;
     qnb = qnb0; vn = vn0, pos = pos0;
     Kg = Ka = I33; eb = db = O31;
     Maa = Mav = Map = Mva = Mvv = Mvp = Mpv = Mpp = O33;
@@ -793,14 +852,22 @@ CSINS::CSINS(const CQuat &qnb0, const CVect3 &vn0, const CVect3 &pos0, double tk
     CVect3 wib(0.0), fb=(~qnb)*CVect3(0,0,glv.g0);
     lvr = an = O31;
     Rwfa = CRAvar(9);
-    Update(&wib, &fb, 1, 1.0); tk = tk0;  ts = nts = 1.0; qnb = qnb0;   vn = vn0, pos = pos0;
+    Update(&wib, &fb, 1, 1.0); 
+    tk = tk0;  ts = nts = 1.0; qnb = qnb0;   vn = vn0, pos = pos0;
     etm(); lever(); Extrap();
 }
 
+/**
+ * @brief Set Gryo&Acc correlation time of first-order Gauss-Markov stochastic
+ *      model
+ * @param[in] tauG Gryo correlation time(sec)
+ * @param[in] tauA Accelerometer correlation time(sec)
+ */
 void CSINS::SetTauGA(const CVect3 &tauG, const CVect3 &tauA)
 {
     tauGyro = tauG, tauAcc = tauA;
-    _betaGyro.i = tauG.i>INF/2 ? 0.0 : -1.0/tauG.i;   // Gyro&Acc inverse correlation time for AR(1) model
+    // Gyro&Acc inverse correlation time for AR(1) model
+    _betaGyro.i = tauG.i>INF/2 ? 0.0 : -1.0/tauG.i;
     _betaGyro.j = tauG.j>INF/2 ? 0.0 : -1.0/tauG.j;
     _betaGyro.k = tauG.k>INF/2 ? 0.0 : -1.0/tauG.k;
     _betaAcc.i  = tauA.i>INF/2 ? 0.0 : -1.0/tauA.i;
@@ -808,15 +875,22 @@ void CSINS::SetTauGA(const CVect3 &tauG, const CVect3 &tauA)
     _betaAcc.k  = tauA.k>INF/2 ? 0.0 : -1.0/tauA.k;
 }
 
+/**
+ * @brief INS Navigation solution update
+ * @param[in] pwm       Attitude increment(Gryo measurements)
+ * @param[in] pvm       Velocity increment(Accelerometer measurements)
+ * @param[in] nSamples  Number of subsamples
+ * @param[in] ts        Sampling interval(sec)
+ */
 void CSINS::Update(const CVect3 *pwm, const CVect3 *pvm, int nSamples, double ts)
 {
 #ifdef PSINS_LOW_GRADE_MEMS
-#pragma message("  PSINS_LOW_GRADE_MEMS")
+//#pragma message("  PSINS_LOW_GRADE_MEMS")
     this->ts = ts;  nts = nSamples*ts;  tk += nts;
     double nts2 = nts/2;
     imu.Update(pwm, pvm, nSamples);
-    imu.phim = Kg*imu.phim - eb*nts; imu.dvbm = Ka*imu.dvbm - db*nts;  // IMU calibration
-//  CVect3 vn01 = vn+an*nts2, pos01 = pos+eth.vn2dpos(vn01,nts2);
+    //IMU calibration ref Yan2016(P77,4.2-2)
+    imu.phim = Kg*imu.phim - eb*nts; imu.dvbm = Ka*imu.dvbm - db*nts;
     eth.Update(pos);
     wib = imu.phim/nts; fb = imu.dvbm/nts;
     web = wib;
@@ -831,22 +905,27 @@ void CSINS::Update(const CVect3 *pwm, const CVect3 *pvm, int nSamples, double ts
 #else
     this->ts = ts;  nts = nSamples*ts;  tk += nts;
     double nts2 = nts/2;
-    imu.Update(pwm, pvm, nSamples);
-    imu.phim = Kg*imu.phim - eb*nts; imu.dvbm = Ka*imu.dvbm - db*nts;  // IMU calibration
+    this->imu.Update(pwm, pvm, nSamples);
+    //IMU calibration ref Yan2016(P77,4.2-2)
+    imu.phim = Kg*imu.phim - eb*nts; imu.dvbm = Ka*imu.dvbm - db*nts;
     CVect3 vn01 = vn+an*nts2, pos01 = pos+eth.vn2dpos(vn01,nts2);
     eth.Update(pos01, vn01);
     wib = imu.phim/nts; fb = imu.dvbm/nts;
     web = wib - Cbn*eth.wnie;
     wnb = wib - (qnb*rv2q(imu.phim/2))*eth.wnin;
+    // Specific force coordinate transformation
     fn = qnb*fb;
-    an = rv2q(-eth.wnin*nts2)*fn+eth.gcc;
+    // Velocity update(Note: add attitude compensation due to earth rotation)
+    an = rv2q(-eth.wnin*nts2)*fn + eth.gcc;
     CVect3 vn1 = vn + an*nts;
+    // Position update
     pos = pos + eth.vn2dpos(vn+vn1, nts2);  vn = vn1;
     Cnb0 = Cnb;
+    // Attitude update
     qnb = rv2q(-eth.wnin*nts)*qnb*rv2q(imu.phim);
     Cnb = q2mat(qnb); att = m2att(Cnb); Cbn = ~Cnb; vb = Cbn*vn;
 #endif
-    psinsassert(pos.i<85.0*PI/180 && pos.i>-85.0*PI/180);
+    assert(pos.i<85.0*PI/180 && pos.i>-85.0*PI/180);
     if(vn.i>velMax) vn.i=velMax; else if(vn.i<-velMax) vn.i=-velMax;
     if(vn.j>velMax) vn.j=velMax; else if(vn.j<-velMax) vn.j=-velMax;
     if(vn.k>velMax) vn.k=velMax; else if(vn.k<-velMax) vn.k=-velMax;
@@ -854,9 +933,16 @@ void CSINS::Update(const CVect3 *pwm, const CVect3 *pvm, int nSamples, double ts
     if(pos.k>hgtMax) pos.k=hgtMax; else if(pos.k<hgtMin) pos.k=hgtMin;
     CVect wfa(9);
     *(CVect3*)&wfa.dd[0]=wib, *(CVect3*)&wfa.dd[3]=fb, *(CVect3*)&wfa.dd[6]=an;
-    Rwfa.Update(wfa, nts);
+    this->Rwfa.Update(wfa, nts);
 }
 
+/**
+ * @brief INS fast extrapolation using 1 Gyro&Acc sample.
+ * @param[in] pwm       Angle increment(1 sample), default(O31)
+ * @param[in] pvm       Velocity increment(1 sample),default(O31)
+ * @param[in] ts        Sample time interval(sec),default 0.0. When ts value is
+ *      0, this function will use current state as extrapolation
+ */
 void CSINS::Extrap(const CVect3 &wm, const CVect3 &vm, double ts)
 {
     if(ts<1.0e-6)  // reset
@@ -871,14 +957,24 @@ void CSINS::Extrap(const CVect3 &wm, const CVect3 &vm, double ts)
     }
 }
 
+/**
+ * @brief Set
+ * @param[in] dL vector(Antenna phase center relative to the IMU center)
+ *      default:O31
+ */
 void CSINS::lever(const CVect3 &dL)
 {
-    if(!IsZero(dL)) lvr = dL;
+    if(!IsZero(dL)) this->lvr = dL;
     Mpv = CMat3(0,eth.f_RMh,0, eth.f_clRNh,0,0, 0,0,1);
-    CW = Cnb*askew(web), MpvCnb = Mpv*Cnb;
-    vnL = vn + CW*lvr; posL = pos + MpvCnb*lvr;
+    //cal Antenna center velocity, ref Yan2016(P153:6.3-4)
+    CW = Cnb*askew(web); vnL = vn + CW*lvr;
+    //cal Antenna center position, ref Yan2016(P153:6.3-7)
+    MpvCnb = Mpv*Cnb; posL = pos + MpvCnb*lvr;
 }
 
+/**
+ * @brief 
+ */
 void CSINS::etm(void)
 {
 #ifdef PSINS_LOW_GRADE_MEMS
@@ -899,14 +995,15 @@ void CSINS::etm(void)
     Mvv = Avn*Mav - askew(eth.wnie+eth.wnin);
     Mvp = Avn*(Mp1+Map);
     double scl = eth.sl*eth.cl;
-    Mvp.e20 = Mvp.e20-glv.g0*(5.27094e-3*2*scl+2.32718e-5*4*eth.sl2*scl); Mvp.e22 = Mvp.e22+3.086e-6;
+    Mvp.e20 = Mvp.e20-glv.g0*(5.27094e-3*2*scl+2.32718e-5*4*eth.sl2*scl);
+    Mvp.e22 = Mvp.e22+3.086e-6;
     Mpv = CMat3(0,f_RMh,0, f_clRNh,0,0, 0,0,1);
     Mpp = CMat3(0,0,-vN*f_RMh2, vE*tl*f_clRNh,0,-vE*secl*f_RNh2, 0,0,0);
 #endif
 }
 
 #ifdef PSINS_AHRS_MEMS
-#pragma message("  PSINS_AHRS_MEMS")
+//#pragma message("  PSINS_AHRS_MEMS")
 
 /*********************  class CMahony AHRS  ************************/
 CMahony::CMahony(double tau, const CQuat &qnb0)
@@ -993,7 +1090,7 @@ void CQEAHRS::Update(const CVect3 &gyro, const CVect3 &acc, const CVect3 &mag, d
     fx = acc.i,          fy = acc.j,          fz = acc.k; 
     mx = mag.i,          my = mag.j,          mz = mag.k; 
     // Ft
-                    0, Ft.dd[ 1] = -wx/2, Ft.dd[ 2] = -wy/2, Ft.dd[ 3] = -wz/2,  Ft.dd[ 4] =  q1/2, Ft.dd[ 5] =  q2/2, Ft.dd[ 6] =  q3/2; 
+    Ft.dd[ 0] =      0, Ft.dd[ 1] = -wx/2, Ft.dd[ 2] = -wy/2, Ft.dd[ 3] = -wz/2,  Ft.dd[ 4] =  q1/2, Ft.dd[ 5] =  q2/2, Ft.dd[ 6] =  q3/2;
     Ft.dd[ 7] =  wx/2,                 0, Ft.dd[ 9] =  wz/2, Ft.dd[10] = -wy/2,  Ft.dd[11] = -q0/2, Ft.dd[12] =  q3/2, Ft.dd[13] = -q2/2; 
     Ft.dd[14] =  wy/2, Ft.dd[15] = -wz/2,                 0, Ft.dd[17] =  wx/2,  Ft.dd[18] = -q3/2, Ft.dd[18] = -q0/2, Ft.dd[20] =  q1/2; 
     Ft.dd[21] =  wz/2, Ft.dd[22] =  wy/2, Ft.dd[23] = -wx/2,                 0,  Ft.dd[25] =  q2/2, Ft.dd[26] = -q1/2, Ft.dd[27] = -q0/2; 
@@ -1028,7 +1125,7 @@ void CQEAHRS::Update(const CVect3 &gyro, const CVect3 &acc, const CVect3 &mag, d
 
 /******************************  File Read or Write *********************************/
 #ifdef PSINS_IO_FILE
-#pragma message("  PSINS_IO_FILE")
+//#pragma message("  PSINS_IO_FILE")
 
 //#include "io.h"
 #include <stdio.h>

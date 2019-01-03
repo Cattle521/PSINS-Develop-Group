@@ -118,8 +118,8 @@ void CKFApp::SetMeasYaw(double ymag)
 
 /**
  * @brief 
- * @param[in] pwm
- * @param[in] pvm
+ * @param[in] pwm       Attitude increment(Gryo measurements)
+ * @param[in] pvm       Velocity increment(Accelerometer measurements)
  * @param[in] nn
  * @param[in] ts
  * @return 

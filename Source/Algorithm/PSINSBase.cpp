@@ -6,7 +6,7 @@
  * @version 1.0
  * @date 2018-12-27
  */
-#include "MathBase.h"
+#include "PSINSBase.h"
 
 const CVect3 I31(1.0), O31(0.0), Ipos(1.0/RE,1.0/RE,1.0);
 const CQuat  qI(1.0,0.0,0.0,0.0);
@@ -1932,7 +1932,7 @@ CEarth::CEarth(double a0, double f0, double wie, double g0)
 /**
  * @brief Update mamber variables
  * @param[in] pos Geodetic coordinate postion
- * @param[in] vn  Velocity: v_en^n(n-frame to e-frame project in n-frame)
+ * @param[in] vn  Velocity: \f$ v_{en}^n \f$
  */
 void CEarth::Update(const CVect3 &pos, const CVect3 &vn)
 {

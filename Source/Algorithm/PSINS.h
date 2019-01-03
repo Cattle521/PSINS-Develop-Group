@@ -10,6 +10,8 @@
 #ifndef _PSINS_H
 #define _PSINS_H
 
+#include "PSINSBase.h"
+
 #include <float.h>
 #include <math.h>
 #include <stdio.h>
@@ -19,16 +21,14 @@
 #include <time.h>
 #include <glog/logging.h>
 
-#include "MathBase.h"
 
 /************** compile control !!! ***************/
 //#define MAT_COUNT_STATISTIC
 #define PSINS_IO_FILE
 //#define PSINS_RMEMORY
 #define PSINS_AHRS_MEMS
-#define PSINS_LOW_GRADE_MEMS
+//#define PSINS_LOW_GRADE_MEMS
 //#define CSINSGPSOD_INIT_BY_USER
-//#define PSINS_psinsassert
 //#define PSINS_UART_PUSH_POP
 
 #define disp(k, nSec, frq)  if(k%(nSec*frq)==0) printf("%d\n", k/frq)
@@ -59,12 +59,6 @@ typedef unsigned char BYTE;
 #define PI_4    (PI/4.0)
 #define _2PI    (2.0*PI)
 
-#ifdef PSINS_psinsassert
-    BOOL    psinspsinsassert(BOOL b);
-#else
-    #define psinsassert(b)  {};
-#endif
-
 #ifndef max
 #define max(x,y)        ( (x)>=(y)?(x):(y) )
 #endif
@@ -74,9 +68,10 @@ typedef unsigned char BYTE;
 
 // class define
 class CGLV;
-class CEarth;   class CIMU;     class CSINS;    class CAligni0;
+class CEarth;   class CIMU;     class CSINS;      class CAligni0;
 class CKalman;  class CSINSKF;  class CSINSTDKF;  class CSINSGPS;
-class CIIR;     class CIIRV3;   class CRMemory; class CFileRdWt;    class CUartPP;
+class CIIR;     class CIIRV3;   class CRMemory;   class CFileRdWt;
+class CUartPP;
 
 // function define
 double  diffYaw(double yaw, double yaw0);
@@ -126,11 +121,19 @@ public:
     BOOL Update(double f, ...);
 };
 
+/**
+ * @brief Inertial Measurement Unit Observation operations
+ */
 class CIMU
 {
 public:
-    int nSamples, prefirst;
-    CVect3 phim, dvbm, wm_1, vm_1;
+    int nSamples; ///< Number of subsample @see CIMU::Update
+    int prefirst; ///< Determinate whether the start of One-plus-previous sample
+    BOOL onePlusPre; ///< Determinate whether to use One-plus-previous
+    CVect3 wm_1;  ///< Last epoch attitude increment(gyro output)
+    CVect3 vm_1;  ///< Last epoch velocity increment(Accelerometer output)
+    CVect3 phim;  ///< Attitude increment(Equivalent rotation vector)
+    CVect3 dvbm;  ///< Velocity increment(With sculled error correlation)
 
     CIMU(void);
     void Update(const CVect3 *pwm, const CVect3 *pvm, int nSamples);
@@ -138,24 +141,71 @@ public:
     friend void IMURFU(CVect3 *pwm, CVect3 *pvm, int nSamples, const char *str);
 };
 
+/**
+ * @brief INS Navigation operations
+ */
 class CSINS
 {
 public:
-    double ts, nts, tk, velMax, hgtMin, hgtMax;
-    CEarth eth;
-    CIMU imu;
-    CQuat qnb;
-    CMat3 Cnb, Cnb0, Cbn, Kg, Ka;
-    CVect3 wib, fb, fn, an, web, wnb, att, vn, vb, pos, eb, db, tauGyro, tauAcc, _betaGyro, _betaAcc;
+    double ts;      ///< Subsampling interval(sec)
+    double nts;     ///< Sampling interval, nSamples*ts(sec)
+    double tk;      ///< Current Time(sec)
+    double velMax;  ///< Velocity upper bound
+    double hgtMin;  ///< Height lower bound
+    double hgtMax;  ///< Height uppoer bound
+    CEarth eth;     ///< Earth related parameters
+    CIMU imu;       ///< IMU related parameters
+
+    CQuat qnb;      ///< Current attitude in quaternion(\f$ q^n_b \f$)
+    CMat3 Cnb;      ///< Current attitude in DCM(\f$ C^n_b \f$)
+    CMat3 Cnb0;     ///< Attitude before update(DCM, \f$ C^n_b(-) \f$)
+    CMat3 Cbn;      ///< Current attitude in DCM(\f$ C^b_n \f$)
+    CMat3 Kg;       ///< Gryo calibration factor matrix(Kg = I - dKg)
+    CMat3 Ka;       ///< Accelerometer calibration factor matrix(Ka = I - dKa)
+    CVect3 eb;      ///< Gryo bias
+    CVect3 db;      ///< Accelerometer bias
+
+    CVect3 wib;     ///< Angular rate measurements(\f$ \omega_{ib}^b \f$)
+    CVect3 fb;      ///< Specific force measurements(\f$ f_{ib}^b \f$)
+    CVect3 fn;      ///< Specific force project in n-frame(\f$ f_{ib}^n \f$)
+    CVect3 an;      ///< Velocity differential(\f$ \dot{ v_{en}^n } \f$)
+    CVect3 web;     ///< Angular rate(\f$ \omega_{eb}^b \f$)
+    CVect3 wnb;     ///< Angular rate(\f$ \omega_{nb}^b \f$)
+    CVect3 att;     ///< Current Attitude in Euler angle(\f$ \phi_{nb} \f$)
+    CVect3 vn;      ///< Carrier velocity under n-frame(\f$ v_{en}^n \f$)
+    CVect3 vb;      ///< Carrier velocity under b-frame(\f$ v_{en}^b \f$)
+    CVect3 pos;     ///< Geodetic position
+
+    //! Gryo correlation time of first-order Gauss-Markov stochastic model
+    CVect3 tauGyro;
+    //! Accelerometer correlation time of first-order Gauss-Markov
+    CVect3 tauAcc;      
+    CVect3 _betaGyro;   ///< -1/tauGryo
+    CVect3 _betaAcc;    ///< -1/tauAcc
+
     CMat3 Maa, Mav, Map, Mva, Mvv, Mvp, Mpv, Mpp;   // for etm
-    CVect3 lvr, vnL, posL; CMat3 CW, MpvCnb;        // for lever arm
-    CQuat qnbE; CVect3 attE, vnE, posE;             // for extrapolation
+
+    // Lerver arm
+    CVect3 lvr;    ///< vector(Antenna phase center relative to the IMU center)
+    CVect3 vnL;    ///< Antenna velocity(\f$ v_{eL}^n \f$)
+    CVect3 posL;   ///< Antenna geodetic position
+    CMat3 CW;      ///< \f$ C^n_b (\omega_{eb}^b\times) \f$
+    CMat3 MpvCnb;  ///< \f$ M_pv C^n_b \f$
+    
+    // for extrapolation
+    CQuat qnbE;
+    CVect3 attE;
+    CVect3 vnE;
+    CVect3 posE;             
     CRAvar Rwfa;
 
-    CSINS(const CQuat &qnb0=qI, const CVect3 &vn0=O31, const CVect3 &pos0=O31, double tk0=0.0);    // initialization using quat attitude, velocity & position
+    // initialization using quat attitude, velocity & position
+    CSINS(const CQuat &qnb0=qI, const CVect3 &vn0=O31, const CVect3 &pos0=O31, double tk0=0.0);
     void SetTauGA(const CVect3 &tauG, const CVect3 &tauA);
-    void Update(const CVect3 *pwm, const CVect3 *pvm, int nSamples, double ts);     // SINS update using Gyro&Acc samples
-    void Extrap(const CVect3 &wm=O31, const CVect3 &vm=O31, double ts=0.0);         // SINS fast extrapolation using 1 Gyro&Acc sample
+    // SINS update using Gyro&Acc samples
+    void Update(const CVect3 *pwm, const CVect3 *pvm, int nSamples, double ts);
+    // SINS fast extrapolation using 1 Gyro&Acc sample
+    void Extrap(const CVect3 &wm=O31, const CVect3 &vm=O31, double ts=0.0);
     void lever(const CVect3 &dL=O31);       // lever arm
     void etm(void);                         // SINS error transform matrix coefficients
 };
@@ -180,7 +230,7 @@ public:
 
     CIIRV3(void);
     CIIRV3(double *b0, double *a0, int n0,
-           double *b1=(double*)NULL, double *a1=(double*)NULL, int n1=0, 
+           double *b1=(double*)NULL, double *a1=(double*)NULL, int n1=0,
            double *b2=(double*)NULL, double *a2=(double*)NULL, int n2=0);
     CVect3 Update(CVect3 &x);
 };
@@ -207,11 +257,11 @@ public:
     double zfdafa;  ///<
     int nq;         ///< Number of states
     int nr;         ///< Number of observations
-    int measflag;   ///< 
+    int measflag;   ///<
     CMat Ft;        ///< System matrix in continuous system: x_dot = Ft * x
     CMat Pk;        ///< State's variance-covariance matrix at moment k
     CMat Hk;        ///< Measurement matrix
-    CMat Fading;    ///< 
+    CMat Fading;    ///<
     CVect Xk;       ///< State vector
     CVect Zk;       ///< Observation vector
     CVect Qt;       ///< Main diagonal vector of system noise matrix
@@ -221,12 +271,12 @@ public:
     CVect Xmax;
     CVect Pmax;
     CVect Pmin;
-    CVect Zfd; 
+    CVect Zfd;
     CVect Zfd0;
 
-    CVect Rmax;     ///< 
-    CVect Rmin;     ///< 
-    CVect Rbeta;    ///< 
+    CVect Rmax;     ///<
+    CVect Rmin;     ///<
+    CVect Rbeta;    ///<
     CVect Rb;              // measurement noise R adaptive
 
     CVect FBTau;
@@ -261,8 +311,9 @@ public:
     virtual void SetFt(void);
     virtual void SetHk(void);
     virtual void Feedback(double fbts);
+
     int Update(const CVect3 *pwm, const CVect3 *pvm, int nSamples, double ts);  // KF Time&Meas Update
-    void QtMarkovGA(const CVect3 &tauG, const CVect3 &sRG, const CVect3 &tauA, const CVect3 &sRA); 
+    void QtMarkovGA(const CVect3 &tauG, const CVect3 &sRG, const CVect3 &tauA, const CVect3 &sRA);
     virtual void Miscellanous(void) {};
     virtual void Secret(void);
 };
@@ -270,19 +321,19 @@ public:
 class CSINSTDKF:public CSINSKF
 {
 public:
-    double tdts;
-    double Pz0;
-    double innovation;
-    int iter;
-    int ifn;
-    int adptOKi;
-    int measRes;
+    double tdts;        ///< 
+    double Pz0;         //
+    double innovation;  //
+    int iter;           //
+    int ifn;            ///< 
+    int adptOKi;        ///< 
+    int measRes;        ///< 
     int tdStep;
     int maxStep;
     CMat Fk;
-    CMat Pk1; 
+    CMat Pk1;
     CVect Pxz;
-    CVect Qk; 
+    CVect Qk;
     CVect Kk;
     CVect Hi;
     CVect tmeas;
@@ -416,7 +467,7 @@ public:
 #define UARTBUFLEN  (UARTFRMLEN*20)
     unsigned char head[2], popbuf[UARTFRMLEN], buf[UARTBUFLEN], chksum;
     int pushIdx, popIdx, frameLen, overflow, getframe;
-    int csflag, cs0, cs1, css;   // 0: no checksum, 1: unsigned char sum, 2: crc8; popbuf[css]==popbuf[cs0]+...+popbuf[cs1] 
+    int csflag, cs0, cs1, css;   // 0: no checksum, 1: unsigned char sum, 2: crc8; popbuf[css]==popbuf[cs0]+...+popbuf[cs1]
 //unsigned short chksum;
 
     BOOL checksum(const unsigned char *pc);
@@ -441,11 +492,11 @@ public:
     BOOL Update(double tStep);
 };
 
-typedef struct {
-    unsigned short head, chksum; 
-    float t, gx, gy, gz, ax, ay, az, magx, magy, magz, bar, pch, rll, yaw, ve, vn, vu,
-        lon0, lon1, lat0, lat1, hgt, gpsve, gpsvn, gpsvu, gpslon0, gpslon1, gpslat0, gpslat1, gpshgt,
-        gpsstat, gpsdly, tmp, rsv;
-} PSINSBoard;
+// typedef struct {
+    // unsigned short head, chksum;
+    // float t, gx, gy, gz, ax, ay, az, magx, magy, magz, bar, pch, rll, yaw, ve, vn, vu,
+        // lon0, lon1, lat0, lat1, hgt, gpsve, gpsvn, gpsvu, gpslon0, gpslon1, gpslat0, gpslat1, gpshgt,
+        // gpsstat, gpsdly, tmp, rsv;
+// } PSINSBoard;
 
 #endif
