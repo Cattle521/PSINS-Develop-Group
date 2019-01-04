@@ -351,9 +351,9 @@ double norm(const CVect3 &v)
 double norminf(const CVect3 &v)
 {
     double nm=0;
-    if(v.i>0)  nm = max(nm, v.i);   else   nm = max(nm, -v.i);
-    if(v.j>0)  nm = max(nm, v.j);   else   nm = max(nm, -v.j);
-    if(v.k>0)  nm = max(nm, v.k);   else   nm = max(nm, -v.k);
+    if(v.i>0)  nm = pmax(nm, v.i);   else   nm = pmax(nm, -v.i);
+    if(v.j>0)  nm = pmax(nm, v.j);   else   nm = pmax(nm, -v.j);
+    if(v.k>0)  nm = pmax(nm, v.k);   else   nm = pmax(nm, -v.k);
     return nm;
 }
 /**

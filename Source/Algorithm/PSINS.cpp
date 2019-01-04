@@ -100,7 +100,12 @@ void CRAvar::Update(double r, double ts, int i)
     double dr2=r-r0[i]; dr2=dr2*dr2; r0[i]=r;
     if(dr2>R0[i]) R0[i]=dr2; else R0[i]=(1.0-tstau)*R0[i]+tstau*dr2;
     if(R0[i]<Rmin[i]) R0[i]=Rmin[i];
-    if(R0[i]>Rmax[i]) {R0[i]=Rmax[i];Rmaxflag[i]=Rmaxcount[i];} else {Rmaxflag[i]-=Rmaxflag[i]>0;}
+    if(R0[i]>Rmax[i]) 
+    {
+        R0[i]=Rmax[i];Rmaxflag[i]=Rmaxcount[i];
+    } 
+    else 
+        Rmaxflag[i] -= Rmaxflag[i]>0;
 }
 
 void CRAvar::Update(const CVect3 &r, double ts)
@@ -125,7 +130,7 @@ double CRAvar::operator()(int k)
 /***************************  class CVAR  ***********************************/
 CVAR::CVAR(int imax0, float data0)
 {
-    imax = min(imax0, VARMAX);
+    imax = pmin(imax0, VARMAX);
     for(ipush=0; ipush<imax; ipush++)   array[ipush] = data0;
     ipush = 0;
     mean = data0; var = 0.0;
@@ -224,7 +229,8 @@ CKalman::CKalman(int nq0, int nr0)
     Ft = Pk = CMat(nq,nq,0.0);
     Hk = CMat(nr,nq,0.0);  Fading = CMat(nr,nq,1.0); zfdafa = 0.1;
     Qt = Pmin = Xk = CVect(nq,0.0);  Xmax = Pmax = CVect(nq,INF);
-    Zk = CVect(nr,0.0);  Rt = CVect(nr,INF); rts = CVect(nr,1.0);  Zfd = CVect(nr,0.0); Zfd0 = CVect(nr,INF);
+    Zk = CVect(nr,0.0);  Rt = CVect(nr,INF); rts = CVect(nr,1.0); 
+    Zfd = CVect(nr,0.0); Zfd0 = CVect(nr,INF);
     Rmax = CVect(nr,INF); Rmin = Rb = CVect(nr,0.0); Rbeta = CVect(nr,1.0);
     for(int i=0; i<nr; i++) { Rmaxcount[i]=0, Rmaxcount0[i]=5; }
     FBTau = FBMax = CVect(nq,INF); FBXk = FBTotal = CVect(nq,0.0);
@@ -719,7 +725,9 @@ void CSINSGPSOD::SetMeasYaw(double ymag)
  */
 CIMU::CIMU(void)
 {
-    nSamples = prefirst = 1;
+    this->nSamples = 1; 
+    this->prefirst = 1;
+    this->onePlusPre = 1;
     phim = dvbm = wm_1 = vm_1 = O31;
 }
 
@@ -931,6 +939,7 @@ void CSINS::Update(const CVect3 *pwm, const CVect3 *pvm, int nSamples, double ts
     if(vn.k>velMax) vn.k=velMax; else if(vn.k<-velMax) vn.k=-velMax;
     if(pos.j>PI) pos.j-=_2PI; else if(pos.j<-PI) pos.j+=_2PI;
     if(pos.k>hgtMax) pos.k=hgtMax; else if(pos.k<hgtMin) pos.k=hgtMin;
+
     CVect wfa(9);
     *(CVect3*)&wfa.dd[0]=wib, *(CVect3*)&wfa.dd[3]=fb, *(CVect3*)&wfa.dd[6]=an;
     this->Rwfa.Update(wfa, nts);
@@ -951,9 +960,10 @@ void CSINS::Extrap(const CVect3 &wm, const CVect3 &vm, double ts)
     }
     else
     {
-        vnE = vnE + qnbE*vm + eth.gcc*ts;
-        posE = posE + eth.vn2dpos(vnE,ts);
-        qnbE = qnbE*rv2q(wm); attE = q2att(qnbE);
+        this->vnE = vnE + qnbE*vm + eth.gcc*ts;
+        this->posE = posE + eth.vn2dpos(vnE,ts);
+        this->qnbE = qnbE*rv2q(wm); 
+        this->attE = q2att(qnbE);
     }
 }
 
@@ -968,12 +978,12 @@ void CSINS::lever(const CVect3 &dL)
     Mpv = CMat3(0,eth.f_RMh,0, eth.f_clRNh,0,0, 0,0,1);
     //cal Antenna center velocity, ref Yan2016(P153:6.3-4)
     CW = Cnb*askew(web); vnL = vn + CW*lvr;
-    //cal Antenna center position, ref Yan2016(P153:6.3-7)
+    //cal Antenna cente position, ref Yan2016(P153:6.3-7)
     MpvCnb = Mpv*Cnb; posL = pos + MpvCnb*lvr;
 }
 
 /**
- * @brief 
+ * @brief Update
  */
 void CSINS::etm(void)
 {
@@ -1405,7 +1415,7 @@ CFileRdWt& CFileRdWt::operator>>(CMat &m)
 
 CRMemory::CRMemory(BYTE *pMem, long memLen0, BYTE recordLen0)
 {
-    psinsassert(recordLen0<=MAX_RECORD_BYTES);
+    assert(recordLen0<=MAX_RECORD_BYTES);
     pMemStart = pMemPush = pMemPop = pMem;
     pMemEnd = pMemStart + memLen0;
     pushLen = popLen = recordLen = recordLen0;
@@ -1432,7 +1442,7 @@ BOOL CRMemory::push(const BYTE *p)
     BOOL res = 1;
     if(p==(BYTE*)NULL) p = pushBuf;
     pushLen = recordLen==0 ? *p : recordLen;
-    psinsassert(pushLen<=MAX_RECORD_BYTES);
+    assert(pushLen<=MAX_RECORD_BYTES);
     for(BYTE i=0; i<pushLen; i++,dataLen++)
     {
         *pMemPush++ = *p++;
@@ -1638,27 +1648,6 @@ int CUartPP::pop(unsigned char *buf0)
     }
     return getframetmp;
 }
-#endif
-
-#ifdef PSINS_psinsassert
-
-#pragma message("  psinsassert();")
-
-BOOL psinsassert(BOOL b)
-{
-    int res;
-
-    if(b)
-    {
-        res = 1;
-    }
-    else
-    {
-        res = 0;
-    }
-    return res;
-}
-
 #endif
 
 double diffYaw(double yaw, double yaw0)

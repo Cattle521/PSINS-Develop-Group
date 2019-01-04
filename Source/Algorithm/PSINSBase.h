@@ -41,11 +41,29 @@ typedef int     BOOL;
 #define _2PI    (2.0*PI)
 #define INF     3.402823466e+30F
 
-#ifndef max
-#define max(x,y)        ( (x)>=(y)?(x):(y) )
+// constant define
+#ifndef TRUE
+#define TRUE    1
+#define FALSE   0
 #endif
-#ifndef min
-#define min(x,y)        ( (x)<=(y)?(x):(y) )
+
+#ifndef NULL
+#define NULL    ((void *)0)
+#endif
+
+// type re-define
+#ifndef BOOL
+typedef int     BOOL;
+#endif
+#ifndef BYTE
+typedef unsigned char BYTE;
+#endif
+
+#ifndef pmax
+#define pmax(x,y)        ( (x)>=(y)?(x):(y) )
+#endif
+#ifndef pmin
+#define pmin(x,y)        ( (x)<=(y)?(x):(y) )
 #endif
 
 #ifndef DEG

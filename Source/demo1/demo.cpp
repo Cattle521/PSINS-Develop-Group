@@ -8,6 +8,7 @@
  *  2018-12-13 created
  */
 #include "KFApp.h"
+#include "PSINSIO.h"
 
 #define FRQ 100         ///< Frequence
 #define Ts (1.0/FRQ)    ///< Period
@@ -55,7 +56,9 @@ int main(int argc, char* argv[])
 
     for(int i=0; i<10000*FRQ; i+=1)
     {
-        if(!fin.load()) break;  convert(); kf.SetMeasVG();
+        if(!fin.load()) break; 
+        convert();
+        kf.SetMeasVG();
         kf.Update(&ps->Gyro, &ps->Acc, 1, Ts);
         if(i%5==0)
         {

@@ -1,4 +1,3 @@
-/* Copyright(c) 2015-2018, by Gongmin Yan, All rights reserved. */
 /**
 * @file PSINS.h
 * @brief PSINS(Precise Strapdown Inertial Navigation System) C++ alogrithm hearder file
@@ -6,12 +5,16 @@
 * @version 1.0
 * @date 17/02/2015, 19/07/2017, 11/12/2018
 */
+/* Copyright(c) 2015-2018, by Gongmin Yan, All rights reserved. */
 
 #ifndef _PSINS_H
 #define _PSINS_H
 
-#include "PSINSBase.h"
 
+#include "PSINSBase.h"
+#include <glog/logging.h>
+
+//std lib
 #include <float.h>
 #include <math.h>
 #include <stdio.h>
@@ -19,12 +22,9 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <time.h>
-#include <glog/logging.h>
-
 
 /************** compile control !!! ***************/
 //#define MAT_COUNT_STATISTIC
-#define PSINS_IO_FILE
 //#define PSINS_RMEMORY
 #define PSINS_AHRS_MEMS
 //#define PSINS_LOW_GRADE_MEMS
@@ -33,44 +33,11 @@
 
 #define disp(k, nSec, frq)  if(k%(nSec*frq)==0) printf("%d\n", k/frq)
 
-// type re-define
-#ifndef BOOL
-typedef int     BOOL;
-#endif
-
-#ifndef BYTE
-typedef unsigned char BYTE;
-#endif
-
-// constant define
-#ifndef TRUE
-#define TRUE    1
-#define FALSE   0
-#endif
-
-#ifndef NULL
-#define NULL    ((void *)0)
-#endif
-
-#ifndef PI
-#define PI      3.14159265358979
-#endif
-#define PI_2    (PI/2.0)
-#define PI_4    (PI/4.0)
-#define _2PI    (2.0*PI)
-
-#ifndef max
-#define max(x,y)        ( (x)>=(y)?(x):(y) )
-#endif
-#ifndef min
-#define min(x,y)        ( (x)<=(y)?(x):(y) )
-#endif
-
 // class define
 class CGLV;
 class CEarth;   class CIMU;     class CSINS;      class CAligni0;
 class CKalman;  class CSINSKF;  class CSINSTDKF;  class CSINSGPS;
-class CIIR;     class CIIRV3;   class CRMemory;   class CFileRdWt;
+class CIIR;     class CIIRV3;   class CRMemory; 
 class CUartPP;
 
 // function define
@@ -79,6 +46,9 @@ double  MKQt(double sR, double tau);
 void    IMURFU(CVect3 *pwm, int nSamples, const char *str);
 void    IMURFU(CVect3 *pwm, CVect3 *pvm, int nSamples, const char *str);
 
+/**
+ * @brief
+ */
 class CRAvar
 {
 public:
@@ -179,11 +149,12 @@ public:
     //! Gryo correlation time of first-order Gauss-Markov stochastic model
     CVect3 tauGyro;
     //! Accelerometer correlation time of first-order Gauss-Markov
-    CVect3 tauAcc;      
+    CVect3 tauAcc;
     CVect3 _betaGyro;   ///< -1/tauGryo
     CVect3 _betaAcc;    ///< -1/tauAcc
-
-    CMat3 Maa, Mav, Map, Mva, Mvv, Mvp, Mpv, Mpp;   // for etm
+    
+    //! Cofficients of error equations, ref Yan2016(P81:4.2-39)
+    CMat3 Maa, Mav, Map, Mva, Mvv, Mvp, Mpv, Mpp;
 
     // Lerver arm
     CVect3 lvr;    ///< vector(Antenna phase center relative to the IMU center)
@@ -191,15 +162,15 @@ public:
     CVect3 posL;   ///< Antenna geodetic position
     CMat3 CW;      ///< \f$ C^n_b (\omega_{eb}^b\times) \f$
     CMat3 MpvCnb;  ///< \f$ M_pv C^n_b \f$
-    
-    // for extrapolation
-    CQuat qnbE;
-    CVect3 attE;
-    CVect3 vnE;
-    CVect3 posE;             
-    CRAvar Rwfa;
 
-    // initialization using quat attitude, velocity & position
+    // for extrapolation
+    CQuat qnbE;     ///< Extrapolation attitude
+    CVect3 attE;    ///< Extrapolation attitude
+    CVect3 vnE;     ///< Extrapolation velocity in n-frame
+    CVect3 posE;    ///< Extrapolation geodetic position
+    CRAvar Rwfa;    ///< Extrapolation
+
+    // Initialization using quat attitude, velocity & position
     CSINS(const CQuat &qnb0=qI, const CVect3 &vn0=O31, const CVect3 &pos0=O31, double tk0=0.0);
     void SetTauGA(const CVect3 &tauG, const CVect3 &tauA);
     // SINS update using Gyro&Acc samples
@@ -268,16 +239,16 @@ public:
     CVect Rt;       ///< Observation noise vector
     CVect rts;      ///< Realtime time span
 
-    CVect Xmax;
-    CVect Pmax;
-    CVect Pmin;
-    CVect Zfd;
-    CVect Zfd0;
+    CVect Xmax;     ///<
+    CVect Pmax;     ///<
+    CVect Pmin;     ///<
+    CVect Zfd;      ///<
+    CVect Zfd0;     ///<
 
     CVect Rmax;     ///<
     CVect Rmin;     ///<
     CVect Rbeta;    ///<
-    CVect Rb;              // measurement noise R adaptive
+    CVect Rb;       ///< measurement noise R adaptive
 
     CVect FBTau;
     CVect FBMax;
@@ -321,13 +292,13 @@ public:
 class CSINSTDKF:public CSINSKF
 {
 public:
-    double tdts;        ///< 
-    double Pz0;         //
-    double innovation;  //
-    int iter;           //
-    int ifn;            ///< 
-    int adptOKi;        ///< 
-    int measRes;        ///< 
+    double tdts;        ///<
+    double Pz0;         ///<
+    double innovation;  ///<
+    int iter;           ///<
+    int ifn;            ///<
+    int adptOKi;        ///<
+    int measRes;        ///<
     int tdStep;
     int maxStep;
     CMat Fk;
@@ -387,57 +358,9 @@ public:
 
 #endif // PSINS_AHRS_MEMS
 
-#ifdef PSINS_IO_FILE
-
-/**
- * @brief File read and write operations
- */
-class CFileRdWt
-{
-    static char dirIn[256];     ///< Input file direcotry
-    static char dirOut[256];    ///< Output file direcotry
-public:
-    FILE *f;            ///< file pointer
-    char fname[256];    ///< file name
-    char line[512];     ///< a line content of current file
-    char sstr[64*4];    ///< string format
-    double buff[64];    ///< data in one line(double)
-    float buff32[64];   ///< data in one line(float)
-    int columns;        ///< number of data columns, when read binary, columns<0
-    int linelen;        ///< lenth of line
-
-    static void Dir(const char *dirI, const char *dirO=(const char*)NULL);
-    CFileRdWt(void);
-    CFileRdWt(const char *fname0, int columns0=0);
-    void Init(const char *fname0, int columns0=0);
-    int load(int lines=1, BOOL txtDelComma=1);
-    int loadf32(int lines=1);
-    int getl(void);  // get a line
-    CFileRdWt& operator<<(double d);
-    CFileRdWt& operator<<(const CVect3 &v);
-    CFileRdWt& operator<<(const CVect &v);
-    CFileRdWt& operator<<(const CMat &m);
-    CFileRdWt& operator<<(const CRAvar &R);
-    CFileRdWt& operator<<(const CAligni0 &aln);
-    CFileRdWt& operator<<(const CSINS &sins);
-#ifdef PSINS_AHRS_MEMS
-    CFileRdWt& operator<<(const CMahony &ahrs);
-    CFileRdWt& operator<<(const CQEAHRS &ahrs);
-#endif
-#ifdef PSINS_UART_PUSH_POP
-    CFileRdWt& operator<<(const CUartPP &uart);
-#endif
-    CFileRdWt& operator<<(const CKalman &kf);
-    CFileRdWt& operator>>(double &d);
-    CFileRdWt& operator>>(CVect3 &v);
-    CFileRdWt& operator>>(CVect &v);
-    CFileRdWt& operator>>(CMat &m);
-    ~CFileRdWt();
-};
 
 char* time2fname(void);
 
-#endif // PSINS_IO_FILE
 
 #ifdef PSINS_RMEMORY
 
@@ -478,7 +401,6 @@ public:
 };
 
 #endif // PSINS_UART_PUSH_POP
-
 class CPTimer   // PSINS Timer
 {
     double tCurrent, tMax;
