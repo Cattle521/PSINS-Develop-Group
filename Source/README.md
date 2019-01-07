@@ -1,3 +1,12 @@
+<!-- vim-markdown-toc GFM -->
+
+- [Open PSINS document in HTML](#open-psins-document-in-html)
+- [CMake Build Setup:](#cmake-build-setup)
+  - [Unix/Linux:](#unixlinux)
+  - [windows](#windows)
+
+<!-- vim-markdown-toc -->
+
 # Open PSINS document in HTML
 
 URL: [https://yinflying.github.io/](https://yinflying.github.io/)
@@ -6,7 +15,7 @@ URL: [https://yinflying.github.io/](https://yinflying.github.io/)
 
 ## Unix/Linux:
 Under current direcotry:
-```bash
+```sh
 $ mkdir ./build
 $ cd ./build
 $ cmake -DCMAKE_BUILD_TYPE=Debug ../
