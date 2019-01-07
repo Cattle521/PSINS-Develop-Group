@@ -2,9 +2,9 @@
 
 URL: [https://yinflying.github.io/](https://yinflying.github.io/)
 
-CMake Build Setup:
+# CMake Build Setup:
 
-# Unix/Linux:
+## Unix/Linux:
 Under current direcotry:
 ```bash
 $ mkdir ./build
@@ -13,7 +13,7 @@ $ cmake -DCMAKE_BUILD_TYPE=Debug ../
 $ make
 $ make test
 ```
-# windows
+## windows
 NOTE: have tested under: win10, cmake-gui 3.13.1, visual studio 2013
 
 1. download cmake from https://cmake.org/download/  and install.
